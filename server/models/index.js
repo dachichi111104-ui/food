@@ -1,0 +1,17 @@
+module.exports = {
+  User: require("./User.model"),
+  Shop: require("./Shop.model"),
+  Category: require("./Category.model"),
+  Product: require("./Product.model"),
+  ProductVariant: require("./ProductVariant.model"),
+  Cart: require("./Cart.model"),
+  CartItem: require("./CartItem.model"),
+  Order: require("./Order.model"),
+  ShopOrder: require("./ShopOrder.model"),
+  OrderItem: require("./OrderItem.model"),
+  PaymentTransaction: require("./PaymentTransaction.model"),
+  Shipment: require("./Shipment.model"),
+  Voucher: require("./Voucher.model"),
+  Review: require("./Review.model"),
+  Report: require("./Report.model"),
+};
