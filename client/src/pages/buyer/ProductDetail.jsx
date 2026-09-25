@@ -5,6 +5,7 @@ import { useCart } from "../../context/CartContext";
 import { getProductDetail } from "../../services/product.service";
 import { addToCart } from "../../services/cart.service";
 import { listReviewsByProduct } from "../../services/review.service";
+import ProductCustomizationModal from "../../components/ProductCustomizationModal";
 import { Star, ShoppingCart, ArrowLeft, Store, Utensils, Package, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 const StarRating = ({ rating }) => (
@@ -33,6 +34,7 @@ const ProductDetail = () => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [addingToCart, setAddingToCart] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,18 +54,9 @@ const ProductDetail = () => {
     fetchData();
   }, [id]);
 
-  const handleAddToCart = async () => {
+  const handleOpenModal = () => {
     if (!user) { navigate("/login"); return; }
-    setError(""); setMessage(""); setAddingToCart(true);
-    try {
-      await addToCart(selectedVariant, quantity);
-      setMessage("Đã thêm vào giỏ hàng thành công!");
-      refreshCartCount();
-    } catch (err) {
-      setError(err.response?.data?.message || "Thêm giỏ hàng thất bại");
-    } finally {
-      setAddingToCart(false);
-    }
+    setIsModalOpen(true);
   };
 
   if (loading) return (
@@ -92,6 +85,12 @@ const ProductDetail = () => {
   return (
     <div style={{ background: "var(--color-bg)", minHeight: "60vh" }}>
       <div className="container" style={{ padding: "40px 32px" }}>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <button onClick={() => navigate(-1)} className="back-btn">
+            <ArrowLeft size={16} /> Quay lại
+          </button>
+        </div>
 
         {/* Breadcrumb */}
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 28, fontSize: 13, color: "var(--color-muted)" }}>
@@ -243,15 +242,12 @@ const ProductDetail = () => {
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               {user?.role === "buyer" ? (
                 <button
-                  onClick={handleAddToCart}
-                  disabled={!variant || variant.available <= 0 || addingToCart}
+                  onClick={handleOpenModal}
+                  disabled={!variant || variant.available <= 0}
                   className="btn btn-primary"
                   style={{ flex: 1, minWidth: 160, display: "flex", alignItems: "center", gap: 8 }}
                 >
-                  {addingToCart
-                    ? <><Loader2 size={16} className="spin-icon" /> Đang thêm...</>
-                    : <><ShoppingCart size={16} /> Thêm vào giỏ hàng</>
-                  }
+                  <ShoppingCart size={16} /> Thêm vào giỏ hàng
                 </button>
               ) : (
                 <button onClick={() => navigate("/login")} className="btn btn-primary" style={{ flex: 1, minWidth: 160 }}>
@@ -264,6 +260,19 @@ const ProductDetail = () => {
                 </Link>
               )}
             </div>
+
+            {/* Customization Popup Modal */}
+            {data && (
+              <ProductCustomizationModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                product={{
+                  ...data.product,
+                  variants: data.variants,
+                }}
+                shop={data.shop}
+              />
+            )}
 
             {!user && (
               <p style={{ marginTop: 12, fontSize: 13, color: "var(--color-muted)" }}>

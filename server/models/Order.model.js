@@ -8,6 +8,14 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
     total_amount: { type: Number, required: true, min: 0 },
+    payment_method: {
+      type: String,
+      enum: ["COD", "VNPAY"],
+      default: "VNPAY",
+    },
+    recipient_name: { type: String, default: "" },
+    recipient_phone: { type: String, default: "" },
+    shipping_address: { type: String, default: "" },
     status: {
       type: String,
       enum: ["PENDING_PAYMENT", "PAID", "CANCELLED"],

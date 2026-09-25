@@ -6,19 +6,15 @@ const ApiError = require("../utils/ApiError");
  * thuộc sản phẩm của shop đó và cập nhật vào Shop document.
  */
 const recalculateShopRating = async (shopId) => {
-  // Lấy tất cả product thuộc shop
   const products = await Product.find({ shop_id: shopId }).select("_id").lean();
   const productIds = products.map((p) => p._id);
 
-  // Lấy tất cả variant thuộc các product đó
   const variants = await ProductVariant.find({ product_id: { $in: productIds } }).select("_id").lean();
   const variantIds = variants.map((v) => v._id);
 
-  // Lấy tất cả OrderItem thuộc các variant đó
   const orderItems = await OrderItem.find({ variant_id: { $in: variantIds } }).select("_id").lean();
   const orderItemIds = orderItems.map((oi) => oi._id);
 
-  // Tính trung bình rating từ tất cả review liên quan
   const aggResult = await Review.aggregate([
     { $match: { order_item_id: { $in: orderItemIds } } },
     { $group: { _id: null, avgRating: { $avg: "$rating" }, count: { $sum: 1 } } },
@@ -31,30 +27,27 @@ const recalculateShopRating = async (shopId) => {
 
 /**
  * Tạo review cho 1 OrderItem cụ thể.
- * Điều kiện:
- * 1. OrderItem phải thuộc về ShopOrder đã COMPLETED
- * 2. OrderItem phải thuộc về Order của chính Buyer đang gọi API
- * 3. Mỗi OrderItem chỉ được review 1 lần (đã có unique index ở model)
+ * Hỗ trợ đánh giá cho cả đơn DELIVERED và COMPLETED.
  */
 const createReview = async (userId, { order_item_id, rating, comment }) => {
   const orderItem = await OrderItem.findById(order_item_id);
   if (!orderItem) {
-    throw new ApiError(404, "Order item not found");
+    throw new ApiError(404, "Không tìm thấy món ăn trong đơn hàng này");
   }
 
   const shopOrder = await ShopOrder.findById(orderItem.shop_order_id);
-  if (!shopOrder || shopOrder.status !== "COMPLETED") {
-    throw new ApiError(400, "You can only review items from a completed order");
+  if (!shopOrder || !["DELIVERED", "COMPLETED"].includes(shopOrder.status)) {
+    throw new ApiError(400, "Bạn chỉ có thể đánh giá món ăn sau khi đơn hàng đã giao thành công hoặc hoàn tất");
   }
 
   const order = await Order.findOne({ _id: shopOrder.order_id, user_id: userId });
   if (!order) {
-    throw new ApiError(403, "This order item does not belong to you");
+    throw new ApiError(403, "Đơn hàng này không thuộc về tài khoản của bạn");
   }
 
   const existing = await Review.findOne({ order_item_id });
   if (existing) {
-    throw new ApiError(409, "This item has already been reviewed");
+    throw new ApiError(409, "Món ăn này đã được gửi đánh giá trước đó");
   }
 
   const review = await Review.create({
@@ -76,10 +69,8 @@ const createReview = async (userId, { order_item_id, rating, comment }) => {
   return review;
 };
 
-
 /**
- * Xem review công khai theo product (thông qua variant -> product).
- * Dùng cho trang chi tiết sản phẩm.
+ * Xem review công khai theo product
  */
 const listReviewsByProduct = async (productId, { page = 1, limit = 10 }) => {
   const { ProductVariant } = require("../models");

@@ -15,6 +15,9 @@ import Cart from "./pages/buyer/Cart";
 import Checkout from "./pages/buyer/Checkout";
 import OrderHistory from "./pages/buyer/OrderHistory";
 import OrderDetail from "./pages/buyer/OrderDetail";
+import UserProfile from "./pages/buyer/UserProfile";
+import FavoritesPage from "./pages/buyer/FavoritesPage";
+import SellerDashboard from "./pages/seller/SellerDashboard";
 import CreateShop from "./pages/seller/CreateShop";
 import ProductManagement from "./pages/seller/ProductManagement";
 import ProductForm from "./pages/seller/ProductForm";
@@ -45,23 +48,26 @@ function App() {
             <Route path="/about" element={<About />} />
 <Route path="/support" element={<Support />} />
 <Route path="/terms" element={<Terms />} />
-
             {/* Buyer - cần đăng nhập + đúng role */}
+            <Route element={<RoleRoute allowedRoles={["buyer", "seller", "admin", "shipper"]} />}>
+              <Route path="/profile" element={<UserProfile />} />
+            </Route>
             <Route element={<RoleRoute allowedRoles={["buyer"]} />}>
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/orders" element={<OrderHistory />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/favorites" element={<FavoritesPage />} />
             </Route>
-
             {/* Seller - Phase 11.3 */}
-<Route element={<RoleRoute allowedRoles={["seller"]} />}>
-  <Route path="/seller/shop" element={<CreateShop />} />
-  <Route path="/seller/products" element={<ProductManagement />} />
-  <Route path="/seller/products/new" element={<ProductForm />} />
-  <Route path="/seller/products/:id/edit" element={<ProductForm />} />
-  <Route path="/seller/orders" element={<ShopOrders />} />
-</Route>
+            <Route element={<RoleRoute allowedRoles={["seller"]} />}>
+              <Route path="/seller/dashboard" element={<SellerDashboard />} />
+              <Route path="/seller/shop" element={<CreateShop />} />
+              <Route path="/seller/products" element={<ProductManagement />} />
+              <Route path="/seller/products/new" element={<ProductForm />} />
+              <Route path="/seller/products/:id/edit" element={<ProductForm />} />
+              <Route path="/seller/orders" element={<ShopOrders />} />
+            </Route>
             {/* Admin - Phase 11.4 */}
 <Route element={<RoleRoute allowedRoles={["admin"]} />}>
   <Route path="/admin/shops" element={<ShopApproval />} />

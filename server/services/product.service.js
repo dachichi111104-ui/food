@@ -58,10 +58,12 @@ const getMyShopProducts = async (shopId) => {
   const productIds = products.map((p) => p._id);
   const variants = await ProductVariant.find({ product_id: { $in: productIds } });
 
-  return products.map((p) => ({
+  const raw = products.map((p) => ({
     ...p.toObject(),
     variants: variants.filter((v) => v.product_id.toString() === p._id.toString()),
   }));
+
+  return await enrichProducts(raw);
 };
 
 /**

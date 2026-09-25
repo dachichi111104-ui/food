@@ -14,4 +14,8 @@ module.exports = {
   Voucher: require("./Voucher.model"),
   Review: require("./Review.model"),
   Report: require("./Report.model"),
+  Address: require("./Address.model"),
+  Favorite: require("./Favorite.model"),
+  Banner: require("./Banner.model"),
+  ShipperReview: require("./ShipperReview.model"),
 };

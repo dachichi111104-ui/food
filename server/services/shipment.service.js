@@ -1,10 +1,6 @@
 const { Shipment, ShopOrder, OrderItem, Shop } = require("../models");
 const ApiError = require("../utils/ApiError");
 
-/**
- * Danh sách đơn đang chờ Shipper nhận (chưa ai nhận).
- * Đây là "pool" chung cho mọi Shipper, không phân biệt khu vực (MVP không có GPS).
- */
 const listAvailableShipments = async ({ page = 1, limit = 10 }) => {
   const shipments = await Shipment.find({ status: "UNASSIGNED" })
     .sort({ createdAt: -1 })
@@ -17,9 +13,6 @@ const listAvailableShipments = async ({ page = 1, limit = 10 }) => {
   return { shipments: enriched, total, page: Number(page), limit: Number(limit) };
 };
 
-/**
- * Đơn đã được gán cho Shipper đang đăng nhập.
- */
 const listMyShipments = async (shipperId, { status, page = 1, limit = 10 }) => {
   const filter = { shipper_id: shipperId };
   if (status) filter.status = status;
@@ -39,6 +32,13 @@ const enrichShipments = async (shipments) => {
   const shopOrderIds = shipments.map((s) => s.shop_order_id);
   const shopOrders = await ShopOrder.find({ _id: { $in: shopOrderIds } });
 
+  const orderIds = shopOrders.map((so) => so.order_id);
+  const { Order, User } = require("../models");
+  const orders = await Order.find({ _id: { $in: orderIds } });
+
+  const userIds = orders.map((o) => o.user_id);
+  const users = await User.find({ _id: { $in: userIds } });
+
   const shopIds = shopOrders.map((so) => so.shop_id);
   const shops = await Shop.find({ _id: { $in: shopIds } });
 
@@ -46,6 +46,8 @@ const enrichShipments = async (shipments) => {
 
   return shipments.map((s) => {
     const shopOrder = shopOrders.find((so) => so._id.toString() === s.shop_order_id.toString());
+    const order = shopOrder ? orders.find((o) => o._id.toString() === shopOrder.order_id.toString()) : null;
+    const user = order ? users.find((u) => u._id.toString() === order.user_id.toString()) : null;
     const shop = shopOrder ? shops.find((sh) => sh._id.toString() === shopOrder.shop_id.toString()) : null;
     const shopOrderItems = shopOrder
       ? items.filter((i) => i.shop_order_id.toString() === shopOrder._id.toString())
@@ -62,6 +64,9 @@ const enrichShipments = async (shipments) => {
             shipping_fee: shopOrder.shipping_fee,
             shop_name: shop ? shop.name : null,
             shop_address: shop ? shop.address : null,
+            recipient_name: user?.name || "Khách hàng",
+            recipient_phone: user?.phone || "Chưa cập nhật SĐT",
+            shipping_address: order?.shipping_address || shop?.city || "TP. Hồ Chí Minh",
             items: shopOrderItems,
           }
         : null,
@@ -72,15 +77,11 @@ const enrichShipments = async (shipments) => {
 const getShipmentOwned = async (shipperId, shipmentId) => {
   const shipment = await Shipment.findOne({ _id: shipmentId, shipper_id: shipperId });
   if (!shipment) {
-    throw new ApiError(404, "Shipment not found or not assigned to you");
+    throw new ApiError(404, "Không tìm thấy đơn vận chuyển hoặc bạn không có quyền xử lý đơn này");
   }
   return shipment;
 };
 
-/**
- * Shipper nhận đơn: UNASSIGNED -> ASSIGNED, gán shipper_id.
- * Dùng atomic findOneAndUpdate để tránh 2 Shipper cùng nhận 1 đơn (race-condition nhẹ).
- */
 const claimShipment = async (shipperId, shipmentId) => {
   const shipment = await Shipment.findOneAndUpdate(
     { _id: shipmentId, status: "UNASSIGNED" },
@@ -89,21 +90,17 @@ const claimShipment = async (shipperId, shipmentId) => {
   );
 
   if (!shipment) {
-    throw new ApiError(409, "This order has already been claimed by another shipper");
+    throw new ApiError(409, "Đơn hàng này đã được nhận bởi một tài xế shipper khác");
   }
 
   return shipment;
 };
 
-/**
- * Shipper xác nhận đã lấy hàng: ASSIGNED -> HANDED_TO_SHIPPER.
- * Đồng bộ ShopOrder (giữ nguyên HANDED_TO_SHIPPER, đã đúng từ Phase 7).
- */
 const confirmPickup = async (shipperId, shipmentId) => {
   const shipment = await getShipmentOwned(shipperId, shipmentId);
 
   if (shipment.status !== "ASSIGNED") {
-    throw new ApiError(400, `Cannot confirm pickup from status ${shipment.status}`);
+    throw new ApiError(400, "Không thể xác nhận lấy hàng ở trạng thái hiện tại");
   }
 
   shipment.status = "HANDED_TO_SHIPPER";
@@ -111,24 +108,32 @@ const confirmPickup = async (shipperId, shipmentId) => {
   return shipment;
 };
 
-/**
- * Shipper xác nhận đã giao xong: HANDED_TO_SHIPPER -> DELIVERED.
- * Đồng bộ sang ShopOrder.status = DELIVERED.
- */
 const markDelivered = async (shipperId, shipmentId) => {
   const shipment = await getShipmentOwned(shipperId, shipmentId);
 
   if (shipment.status !== "HANDED_TO_SHIPPER") {
-    throw new ApiError(400, `Cannot mark delivered from status ${shipment.status}`);
+    throw new ApiError(400, "Không thể xác nhận giao hàng ở trạng thái hiện tại");
   }
 
   shipment.status = "DELIVERED";
   await shipment.save();
 
-  await ShopOrder.findOneAndUpdate(
-    { _id: shipment.shop_order_id, status: "HANDED_TO_SHIPPER" },
-    { status: "DELIVERED" }
+  const shopOrder = await ShopOrder.findOneAndUpdate(
+    { _id: shipment.shop_order_id },
+    { status: "COMPLETED" },
+    { new: true }
   );
+
+  if (shopOrder) {
+    const { Order } = require("../models");
+    const remainingUnfinished = await ShopOrder.countDocuments({
+      order_id: shopOrder.order_id,
+      status: { $nin: ["DELIVERED", "COMPLETED", "CANCELLED"] },
+    });
+    if (remainingUnfinished === 0) {
+      await Order.findByIdAndUpdate(shopOrder.order_id, { status: "COMPLETED" });
+    }
+  }
 
   return shipment;
 };

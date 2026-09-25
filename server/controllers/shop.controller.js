@@ -17,9 +17,18 @@ const createShop = async (req, res, next) => {
   }
 };
 
+const getMyShops = async (req, res, next) => {
+  try {
+    const shops = await shopService.getMyShops(req.user.id);
+    res.status(200).json({ shops });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getMyShop = async (req, res, next) => {
   try {
-    const shop = await shopService.getMyShop(req.user.id);
+    const shop = await shopService.getMyShop(req.user.id, req.query.shop_id || req.headers["x-shop-id"]);
     res.status(200).json({ shop });
   } catch (err) {
     next(err);
@@ -29,14 +38,13 @@ const getMyShop = async (req, res, next) => {
 const updateMyShop = async (req, res, next) => {
   try {
     const data = { ...req.body };
-    // upload.fields -> req.files.logo[0] / req.files.cover[0]
     if (req.files?.logo?.[0]) {
       data.logo_url = req.files.logo[0].path;
     }
     if (req.files?.cover?.[0]) {
       data.cover_url = req.files.cover[0].path;
     }
-    const shop = await shopService.updateMyShop(req.user.id, data);
+    const shop = await shopService.updateMyShop(req.user.id, data, req.query.shop_id || req.headers["x-shop-id"]);
     res.status(200).json({ shop });
   } catch (err) {
     next(err);
@@ -61,4 +69,4 @@ const listPublicShops = async (req, res, next) => {
   }
 };
 
-module.exports = { createShop, getMyShop, updateMyShop, getPublicShop, listPublicShops };
+module.exports = { createShop, getMyShop, getMyShops, updateMyShop, getPublicShop, listPublicShops };

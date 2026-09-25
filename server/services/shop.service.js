@@ -2,34 +2,39 @@ const { Shop, Product, ShopOrder } = require("../models");
 const ApiError = require("../utils/ApiError");
 
 const createShop = async (userId, data) => {
-  const existing = await Shop.findOne({ user_id: userId });
-  if (existing) {
-    throw new ApiError(409, "You already have a shop");
-  }
-
   const shop = await Shop.create({
     user_id: userId,
     name: data.name,
     description: data.description,
     address: data.address,
+    city: data.city || "TP. Hồ Chí Minh",
     logo_url: data.logo_url,
     cover_url: data.cover_url,
-    status: "pending",
+    status: "approved", // Auto-approve or pending
   });
 
   return shop;
 };
 
-const getMyShop = async (userId) => {
-  const shop = await Shop.findOne({ user_id: userId });
+const getMyShops = async (userId) => {
+  const shops = await Shop.find({ user_id: userId }).sort({ createdAt: -1 });
+  return shops;
+};
+
+const getMyShop = async (userId, shopId = null) => {
+  const filter = { user_id: userId };
+  if (shopId) filter._id = shopId;
+  const shop = await Shop.findOne(filter);
   if (!shop) {
     throw new ApiError(404, "You don't have a shop yet");
   }
   return shop;
 };
 
-const updateMyShop = async (userId, data) => {
-  const shop = await Shop.findOne({ user_id: userId });
+const updateMyShop = async (userId, data, shopId = null) => {
+  const filter = { user_id: userId };
+  if (shopId) filter._id = shopId;
+  const shop = await Shop.findOne(filter);
   if (!shop) {
     throw new ApiError(404, "You don't have a shop yet");
   }
@@ -37,6 +42,7 @@ const updateMyShop = async (userId, data) => {
   if (data.name) shop.name = data.name;
   if (data.description !== undefined) shop.description = data.description;
   if (data.address !== undefined) shop.address = data.address;
+  if (data.city) shop.city = data.city;
   if (data.logo_url) shop.logo_url = data.logo_url;
   if (data.cover_url) shop.cover_url = data.cover_url;
 
@@ -65,11 +71,19 @@ const getPublicShop = async (shopId) => {
  * Trả về kèm order_count (số đơn COMPLETED) cho từng shop
  * Sắp xếp: rating cao → mới nhất
  */
-const listPublicShops = async ({ search, category_id, page = 1, limit = 20 }) => {
+const listPublicShops = async ({ search, city, category_id, page = 1, limit = 20 }) => {
   const filter = { status: "approved" };
 
-  if (search) {
-    filter.name = { $regex: search, $options: "i" };
+  if (city) {
+    const cityRegex = new RegExp(city.replace("TP.", "").replace(".", "").trim(), "i");
+    filter.$or = [{ city: { $regex: cityRegex } }, { address: { $regex: cityRegex } }];
+  } else if (search) {
+    const searchRegex = new RegExp(search, "i");
+    filter.$or = [
+      { name: { $regex: searchRegex } },
+      { address: { $regex: searchRegex } },
+      { city: { $regex: searchRegex } },
+    ];
   }
 
   if (category_id) {
@@ -107,4 +121,4 @@ const listPublicShops = async ({ search, category_id, page = 1, limit = 20 }) =>
   return { shops: shopsWithCount, total, page: Number(page), limit: Number(limit) };
 };
 
-module.exports = { createShop, getMyShop, updateMyShop, getPublicShop, listPublicShops };
+module.exports = { createShop, getMyShop, getMyShops, updateMyShop, getPublicShop, listPublicShops };

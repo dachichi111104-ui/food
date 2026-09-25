@@ -16,6 +16,12 @@ const shipmentRoute = require("./routes/shipment.route");
 const adminRoute = require("./routes/admin.route");
 const reportRoute = require("./routes/report.route");
 const reviewRoute = require("./routes/review.route");
+const addressRoute = require("./routes/address.route");
+const favoriteRoute = require("./routes/favorite.route");
+const bannerRoute = require("./routes/banner.route");
+const voucherRoute = require("./routes/voucher.route");
+const chatbotRoute = require("./routes/chatbot.route");
+const messageRoute = require("./routes/message.route");
 
 const app = express();
 
@@ -42,6 +48,13 @@ app.use("/api/shipments", shipmentRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/reports", reportRoute);
 app.use("/api/reviews", reviewRoute);
+app.use("/api/addresses", addressRoute);
+app.use("/api/favorites", favoriteRoute);
+app.use("/api/banners", bannerRoute);
+app.use("/api/vouchers", voucherRoute);
+app.use("/api/chatbot", chatbotRoute);
+app.use("/api/messages", messageRoute);
+
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });

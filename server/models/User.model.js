@@ -18,6 +18,13 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     phone: { type: String, trim: true },
+    address: { type: String, trim: true },
+    city: { type: String, trim: true },
+    district: { type: String, trim: true },
+    ward: { type: String, trim: true },
+    street: { type: String, trim: true },
+    house_number: { type: String, trim: true },
+    avatar_url: { type: String, trim: true },
     is_active: { type: Boolean, default: true },
   },
   { timestamps: true }

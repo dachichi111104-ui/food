@@ -26,6 +26,12 @@ router.get(
   authorize("seller"),
   shopController.getMyShop
 );
+router.get(
+  "/me/list",
+  authenticate,
+  authorize("seller"),
+  shopController.getMyShops
+);
 router.patch(
   "/me/own",
   authenticate,

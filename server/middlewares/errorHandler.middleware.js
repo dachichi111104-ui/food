@@ -1,6 +1,6 @@
 const errorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
+  const message = err.message || "Lỗi hệ thống máy chủ. Vui lòng thử lại sau!";
 
   if (statusCode === 500) {
     console.error(err.stack);

@@ -10,8 +10,14 @@ const getShopOfUser = async (userId) => {
   return shop;
 };
 
-const listMyShopOrders = async (userId, { status, page = 1, limit = 10 }) => {
-  const shop = await getShopOfUser(userId);
+const listMyShopOrders = async (userId, { status, shop_id, page = 1, limit = 20 }) => {
+  let shop;
+  if (shop_id) {
+    shop = await Shop.findOne({ _id: shop_id, user_id: userId });
+  }
+  if (!shop) {
+    shop = await getShopOfUser(userId);
+  }
 
   const filter = { shop_id: shop._id };
   if (status) filter.status = status;
@@ -24,13 +30,34 @@ const listMyShopOrders = async (userId, { status, page = 1, limit = 10 }) => {
   const ids = shopOrders.map((so) => so._id);
   const items = await OrderItem.find({ shop_order_id: { $in: ids } });
 
+  // Fetch parent Order documents to populate recipient info & user details
+  const { Order, User } = require("../models");
+  const orderIds = [...new Set(shopOrders.map((so) => so.order_id.toString()))];
+  const parentOrders = await Order.find({ _id: { $in: orderIds } }).lean();
+  const userIds = [...new Set(parentOrders.map((o) => o.user_id.toString()))];
+  const users = await User.find({ _id: { $in: userIds } }, { name: 1, phone: 1, email: 1 }).lean();
+
+  const orderMap = {};
+  parentOrders.forEach((o) => { orderMap[o._id.toString()] = o; });
+  const userMap = {};
+  users.forEach((u) => { userMap[u._id.toString()] = u; });
+
   const total = await ShopOrder.countDocuments(filter);
 
   return {
-    shopOrders: shopOrders.map((so) => ({
-      ...so.toObject(),
-      items: items.filter((i) => i.shop_order_id.toString() === so._id.toString()),
-    })),
+    shopOrders: shopOrders.map((so) => {
+      const parentOrder = orderMap[so.order_id?.toString()] || {};
+      const buyerUser = userMap[parentOrder.user_id?.toString()] || {};
+      return {
+        ...so.toObject(),
+        items: items.filter((i) => i.shop_order_id.toString() === so._id.toString()),
+        recipient_name: so.recipient_name || parentOrder.recipient_name || buyerUser.name || "Khách hàng",
+        recipient_phone: so.recipient_phone || parentOrder.recipient_phone || buyerUser.phone || "Chưa có SĐT",
+        shipping_address: so.shipping_address || parentOrder.shipping_address || "Địa chỉ mặc định",
+        payment_method: so.payment_method || parentOrder.payment_method || "VNPAY",
+        buyer_id: parentOrder.user_id || null,
+      };
+    }),
     total,
     page: Number(page),
     limit: Number(limit),

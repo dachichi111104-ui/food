@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
 import { createProduct, updateProduct, getProductDetail } from "../../services/product.service";
 import DashboardLayout from "../../components/DashboardLayout";
-import { Camera } from "lucide-react";
+import { Camera, ArrowLeft, AlertCircle, Plus, Trash2 } from "lucide-react";
 
 const ProductForm = () => {
   const { id } = useParams();
@@ -93,6 +93,16 @@ const ProductForm = () => {
       subtitle="Điền đầy đủ thông tin để hiển thị trên thực đơn"
     >
       <div style={{ maxWidth: 560 }}>
+        {/* Back button */}
+        <button
+          type="button"
+          className="btn btn-outline btn-sm"
+          onClick={() => navigate("/seller/products")}
+          style={{ marginBottom: 16, display: "inline-flex", alignItems: "center", gap: 6 }}
+        >
+          <ArrowLeft size={16} /> Quay lại danh sách sản phẩm
+        </button>
+
         <div className="card card-body">
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             <div className="field">
@@ -192,22 +202,22 @@ const ProductForm = () => {
                         <button
                           type="button"
                           onClick={() => removeVariantRow(idx)}
-                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "var(--color-danger)", padding: "4px 8px" }}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-danger)", padding: "4px 8px", display: "flex", alignItems: "center" }}
                           title="Xoá loại này"
                         >
-                          ×
+                          <Trash2 size={16} />
                         </button>
                       )}
                     </div>
                   ))}
-                  <button type="button" onClick={addVariantRow} className="btn btn-outline btn-sm" style={{ alignSelf: "flex-start" }}>
-                    + Thêm loại
+                  <button type="button" onClick={addVariantRow} className="btn btn-outline btn-sm" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <Plus size={14} /> Thêm loại
                   </button>
                 </div>
               </div>
             )}
 
-            {error && <div className="alert alert-error">⚠️ {error}</div>}
+            {error && <div className="alert alert-error" style={{ display: "flex", alignItems: "center", gap: 6 }}><AlertCircle size={16} /> {error}</div>}
 
             <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
               <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={submitting}>

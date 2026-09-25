@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { listShops, listPublicCategories } from "../../services/shop.service";
+import { toggleFavorite } from "../../services/favorite.service";
+import BannerCarousel from "../../components/BannerCarousel";
+import { useAuth } from "../../context/AuthContext";
 import {
   Search, MapPin, Star, ChevronRight, Utensils,
-  Zap, Shield, Store, ArrowRight, LayoutGrid,
+  Zap, Shield, Store, ArrowRight, LayoutGrid, Heart, SlidersHorizontal,
+  Coffee, Soup, Cake, Flame, Briefcase, Leaf, X, Check
 } from "lucide-react";
 
 /* ── Gradients cho shop card placeholder ── */
@@ -17,6 +21,19 @@ const COVER_GRADIENTS = [
 const pickCover = (id) =>
   COVER_GRADIENTS[id.charCodeAt(id.length - 1) % COVER_GRADIENTS.length];
 
+const getCategoryIcon = (name) => {
+  const n = (name || "").toLowerCase();
+  if (n.includes("cơm văn phòng")) return <Briefcase size={16} />;
+  if (n.includes("cơm")) return <Utensils size={16} />;
+  if (n.includes("phở") || n.includes("bún")) return <Soup size={16} />;
+  if (n.includes("nhanh")) return <Zap size={16} />;
+  if (n.includes("trà") || n.includes("uống")) return <Coffee size={16} />;
+  if (n.includes("bánh") || n.includes("tráng miệng")) return <Cake size={16} />;
+  if (n.includes("gà") || n.includes("bbq")) return <Flame size={16} />;
+  if (n.includes("salad") || n.includes("healthy")) return <Leaf size={16} />;
+  return <Utensils size={16} />;
+};
+
 /* ── Skeleton card ── */
 const ShopCardSkeleton = () => (
   <div className="restaurant-card" style={{ pointerEvents: "none" }}>
@@ -29,16 +46,30 @@ const ShopCardSkeleton = () => (
   </div>
 );
 
+const CITIES = [
+  { value: "", label: "Tất cả vị trí" },
+  { value: "TP. Hồ Chí Minh", label: "TP. Hồ Chí Minh" },
+  { value: "Hà Nội", label: "Hà Nội" },
+  { value: "Đà Nẵng", label: "Đà Nẵng" },
+  { value: "Cần Thơ", label: "Cần Thơ" },
+];
+
 const Home = () => {
+  const { user } = useAuth();
   const [shops, setShops]               = useState([]);
   const [categories, setCategories]     = useState([]);
   const [search, setSearch]             = useState("");
-  const [activeCategory, setActiveCategory] = useState(null); // { _id, name }
+  const [cityFilter, setCityFilter]     = useState("");
+  const [activeCategory, setActiveCategory] = useState(null);
   const [loading, setLoading]           = useState(true);
   const [catLoading, setCatLoading]     = useState(true);
   const [error, setError]               = useState("");
 
-  /* ── Fetch categories một lần ── */
+  /* Advanced Filter State */
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [minRating, setMinRating] = useState(0);
+  const [priceRange, setPriceRange] = useState("all");
+
   useEffect(() => {
     listPublicCategories()
       .then((data) => setCategories(data.categories || []))
@@ -46,16 +77,21 @@ const Home = () => {
       .finally(() => setCatLoading(false));
   }, []);
 
-  /* ── Fetch shops — khi search hoặc category thay đổi ── */
-  const fetchShops = async (searchTerm = "", categoryId = null) => {
+  const fetchShops = async (searchTerm = "", categoryId = null, city = "") => {
     setLoading(true);
     setError("");
     try {
       const params = {};
-      if (searchTerm)  params.search      = searchTerm;
-      if (categoryId)  params.category_id = categoryId;
+      if (searchTerm) params.search = searchTerm;
+      if (categoryId) params.category_id = categoryId;
+      if (city) params.city = city;
       const data = await listShops(params);
-      setShops(data.shops || []);
+
+      let resultShops = data.shops || [];
+      if (minRating > 0) {
+        resultShops = resultShops.filter((s) => s.rating >= minRating);
+      }
+      setShops(resultShops);
     } catch {
       setError("Không tải được danh sách quán ăn. Vui lòng thử lại.");
     } finally {
@@ -64,36 +100,104 @@ const Home = () => {
   };
 
   useEffect(() => {
-    fetchShops("", activeCategory?._id || null);
-  }, [activeCategory]);
+    fetchShops(search, activeCategory?._id || null, cityFilter);
+  }, [activeCategory, cityFilter, minRating]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchShops(search, activeCategory?._id || null);
+    fetchShops(search, activeCategory?._id || null, cityFilter);
   };
 
   const handleSelectCategory = (cat) => {
-    // Toggle: click lại category đang active → bỏ chọn
     setActiveCategory((prev) => (prev?._id === cat._id ? null : cat));
-    setSearch(""); // xoá search khi đổi category
+    setSearch("");
   };
 
   const handleReset = () => {
     setActiveCategory(null);
     setSearch("");
+    setCityFilter("");
+    setMinRating(0);
+    setPriceRange("all");
   };
 
   return (
     <div>
+      {/* ── Advanced Filter Modal ── */}
+      {showFilterModal && (
+        <div className="logout-modal-overlay" onClick={() => setShowFilterModal(false)}>
+          <div className="logout-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440, textAlign: "left" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ fontSize: 18, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                <SlidersHorizontal size={18} color="var(--color-primary)" /> Bộ lọc nâng cao
+              </h3>
+              <button onClick={() => setShowFilterModal(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 8 }}>Xếp hạng đánh giá sao:</label>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {[
+                    { label: "Tất cả", val: 0 },
+                    { label: "Từ 4.0 ★", val: 4.0 },
+                    { label: "Từ 4.5 ★", val: 4.5 },
+                  ].map((r) => (
+                    <button
+                      key={r.val}
+                      type="button"
+                      className={`btn ${minRating === r.val ? "btn-primary" : "btn-outline"} btn-sm`}
+                      onClick={() => setMinRating(r.val)}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 700, display: "block", marginBottom: 8 }}>Khoảng giá bình quân:</label>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {[
+                    { label: "Tất cả giá", val: "all" },
+                    { label: "Dưới 50k", val: "under50" },
+                    { label: "50k - 100k", val: "50to100" },
+                    { label: "Trên 100k", val: "above100" },
+                  ].map((p) => (
+                    <button
+                      key={p.val}
+                      type="button"
+                      className={`btn ${priceRange === p.val ? "btn-primary" : "btn-outline"} btn-sm`}
+                      onClick={() => setPriceRange(p.val)}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24, display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button className="btn btn-outline" onClick={handleReset}>Xóa bộ lọc</button>
+              <button className="btn btn-primary" onClick={() => { fetchShops(search, activeCategory?._id, cityFilter); setShowFilterModal(false); }}>
+                Áp dụng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ══════════════════════════════
           HERO
       ══════════════════════════════ */}
-      <section className="panel-hero" style={{ padding: "72px 0 80px" }}>
+      <section className="panel-hero" style={{ padding: "64px 0 72px" }}>
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ maxWidth: 580 }}>
+          <div style={{ maxWidth: 640 }}>
             <p style={{
               color: "var(--color-gold)", fontWeight: 700, fontSize: 12,
-              letterSpacing: "2px", textTransform: "uppercase", marginBottom: 18,
+              letterSpacing: "2px", textTransform: "uppercase", marginBottom: 16,
               display: "flex", alignItems: "center", gap: 8,
             }}>
               <span style={{ width: 24, height: 1, background: "var(--color-gold)", display: "inline-block" }} />
@@ -101,106 +205,113 @@ const Home = () => {
             </p>
 
             <h1 style={{
-              fontSize: "clamp(34px, 5vw, 54px)", fontWeight: 700, color: "#fff",
-              lineHeight: 1.15, marginBottom: 18,
+              fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 700, color: "#fff",
+              lineHeight: 1.15, marginBottom: 16,
             }}>
               Thèm món gì?<br />
               <em style={{ color: "var(--color-gold)", fontStyle: "italic" }}>FoodGo lo.</em>
             </h1>
 
             <p style={{
-              color: "rgba(255,255,255,0.76)", fontSize: 16.5, lineHeight: 1.7,
-              marginBottom: 36, maxWidth: 440,
+              color: "rgba(255,255,255,0.80)", fontSize: 16, lineHeight: 1.65,
+              marginBottom: 32, maxWidth: 460,
             }}>
               Khám phá hàng trăm quán ăn ngon quanh bạn — đặt món trong vài giây, giao tận cửa.
             </p>
 
-            {/* Search bar */}
+            {/* City, Search & Advanced Filter Bar */}
             <form onSubmit={handleSearch}>
               <div style={{
-                display: "flex", gap: 0, maxWidth: 500,
+                display: "flex", gap: 8,
                 background: "#fff", borderRadius: "var(--radius-pill)",
-                padding: "5px 5px 5px 20px",
+                padding: "6px 6px 6px 16px",
                 boxShadow: "0 8px 32px rgba(0,0,0,0.22)",
+                alignItems: "center", flexWrap: "wrap",
               }}>
-                <Search size={18} style={{ color: "var(--color-muted)", flexShrink: 0, alignSelf: "center", marginRight: 10 }} />
-                <input
-                  type="text"
-                  placeholder="Tìm quán ăn, món ăn..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  style={{
-                    flex: 1, border: "none", outline: "none", fontSize: 15,
-                    color: "var(--color-ink)", background: "transparent", padding: "4px 0",
-                  }}
-                />
-                <button type="submit" className="btn btn-primary" style={{ borderRadius: "var(--radius-pill)", padding: "11px 24px", fontSize: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, borderRight: "1px solid var(--color-border-light)", paddingRight: 10 }}>
+                  <MapPin size={16} color="var(--color-primary)" />
+                  <select
+                    value={cityFilter}
+                    onChange={(e) => setCityFilter(e.target.value)}
+                    style={{
+                      border: "none", outline: "none", background: "transparent",
+                      fontSize: 13, fontWeight: 600, color: "var(--color-ink)", cursor: "pointer",
+                    }}
+                  >
+                    {CITIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+                  <Search size={17} style={{ color: "var(--color-muted)", flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    placeholder="Tìm quán ăn, món ăn..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    style={{
+                      width: "100%", border: "none", outline: "none", fontSize: 14.5,
+                      color: "var(--color-ink)", background: "transparent", padding: "4px 0",
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowFilterModal(true)}
+                  className="btn btn-outline"
+                  style={{ borderRadius: "var(--radius-pill)", padding: "10px 14px", fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}
+                  title="Lọc nâng cao"
+                >
+                  <SlidersHorizontal size={14} /> Lọc
+                </button>
+
+                <button type="submit" className="btn btn-primary" style={{ borderRadius: "var(--radius-pill)", padding: "10px 22px", fontSize: 14 }}>
                   Tìm kiếm
                 </button>
               </div>
             </form>
-
-            {/* Stats */}
-            <div style={{ display: "flex", gap: 32, marginTop: 36 }}>
-              {[
-                { num: "500+", label: "Quán đối tác" },
-                { num: "50K+", label: "Đơn mỗi tháng" },
-                { num: "15+",  label: "Quận phục vụ" },
-              ].map((s) => (
-                <div key={s.label}>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700, color: "var(--color-gold)" }}>
-                    {s.num}
-                  </div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 3 }}>
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
-
-        {/* Decorative */}
-        <div style={{
-          position: "absolute", right: "7%", top: "50%", transform: "translateY(-50%)",
-          fontSize: "clamp(80px, 11vw, 130px)", opacity: 0.12, userSelect: "none",
-          pointerEvents: "none", filter: "blur(1px)",
-        }}>✦</div>
       </section>
 
+      {/* Banner Carousel */}
+      <BannerCarousel />
+
       {/* ══════════════════════════════
-          CATEGORY PILLS — dữ liệu thật từ DB
+          CATEGORY PILLS WITH ICONS
       ══════════════════════════════ */}
       {!catLoading && categories.length > 0 && (
         <section style={{
-          background: "var(--color-white)", padding: "20px 0",
+          background: "var(--color-white)", padding: "18px 0",
           borderBottom: "1px solid var(--color-border-light)",
           position: "sticky", top: 64, zIndex: 90,
           boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
         }}>
           <div className="container">
             <div className="category-scroll">
-              {/* "Tất cả" pill */}
               <button
                 className={`category-pill${!activeCategory ? " active" : ""}`}
                 onClick={handleReset}
                 style={{ display: "flex", alignItems: "center", gap: 7 }}
               >
                 <span className="category-pill-icon">
-                  <LayoutGrid size={17} />
+                  <LayoutGrid size={16} />
                 </span>
                 <span>Tất cả</span>
               </button>
 
-              {/* Category pills thật từ backend */}
               {categories.map((cat) => (
                 <button
                   key={cat._id}
                   className={`category-pill${activeCategory?._id === cat._id ? " active" : ""}`}
                   onClick={() => handleSelectCategory(cat)}
+                  style={{ display: "flex", alignItems: "center", gap: 7 }}
                 >
                   <span className="category-pill-icon">
-                    <Utensils size={15} />
+                    {getCategoryIcon(cat.name)}
                   </span>
                   <span>{cat.name}</span>
                 </button>
@@ -210,49 +321,26 @@ const Home = () => {
         </section>
       )}
 
-      {/* ══════════════════════════════
-          RESTAURANT LIST
-      ══════════════════════════════ */}
-      <section style={{ background: "var(--color-bg)", padding: "36px 0 64px" }}>
+      {/* RESTAURANT GRID */}
+      <section style={{ padding: "40px 0 72px" }}>
         <div className="container">
-          <div className="section-heading">
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 24, flexWrap: "wrap", gap: 12,
+          }}>
             <div>
               <h2>
                 {activeCategory
                   ? activeCategory.name
                   : search
                   ? `Kết quả cho "${search}"`
+                  : cityFilter
+                  ? `Quán ăn tại ${cityFilter}`
                   : "Quán ăn nổi bật"}
               </h2>
-              {activeCategory && (
-                <button
-                  onClick={handleReset}
-                  style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    color: "var(--color-muted)", fontSize: 13, padding: 0,
-                    display: "flex", alignItems: "center", gap: 4, marginTop: 4,
-                  }}
-                >
-                  ← Xem tất cả quán
-                </button>
-              )}
             </div>
-            {!loading && (
-              <span className="text-muted text-sm">{shops.length} quán</span>
-            )}
+            {!loading && <span className="text-muted text-sm">{shops.length} quán</span>}
           </div>
-
-          {error && (
-            <div className="alert alert-error" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span>{error}</span>
-              <button
-                onClick={() => fetchShops(search, activeCategory?._id || null)}
-                style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "inherit", fontWeight: 600 }}
-              >
-                Thử lại
-              </button>
-            </div>
-          )}
 
           {loading && (
             <div className="grid-restaurants">
@@ -264,7 +352,6 @@ const Home = () => {
             <div className="grid-restaurants">
               {shops.map((shop) => (
                 <Link key={shop._id} to={`/shops/${shop._id}`} className="restaurant-card">
-                  {/* Cover — ảnh thật nếu có, fallback gradient */}
                   <div className="restaurant-card-cover" style={{
                     background: shop.cover_url ? undefined : pickCover(shop._id),
                     position: "relative", overflow: "hidden",
@@ -273,24 +360,18 @@ const Home = () => {
                       <img src={shop.cover_url} alt={shop.name}
                         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                     ) : (
-                      <>
-                        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.18)" }} />
-                        <Store size={38} color="rgba(255,255,255,0.25)"
-                          style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }} />
-                      </>
+                      <Store size={38} color="rgba(255,255,255,0.25)" style={{ margin: "auto" }} />
                     )}
                   </div>
 
                   <div className="restaurant-card-body">
                     <div className="restaurant-card-name">{shop.name}</div>
-
                     {shop.address && (
                       <div className="restaurant-card-meta" style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <MapPin size={11} style={{ flexShrink: 0 }} />
                         {shop.address}
                       </div>
                     )}
-
                     <div className="restaurant-card-footer">
                       {shop.rating > 0 ? (
                         <span className="badge badge-rating" style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -302,12 +383,9 @@ const Home = () => {
                           Mới
                         </span>
                       )}
-
                       {shop.order_count > 0 && (
                         <span style={{ fontSize: 12, color: "var(--color-muted)" }}>
-                          {shop.order_count >= 1000
-                            ? `${(shop.order_count / 1000).toFixed(1)}k`
-                            : shop.order_count}+ đơn
+                          {shop.order_count}+ đơn
                         </span>
                       )}
                     </div>
@@ -316,101 +394,6 @@ const Home = () => {
               ))}
             </div>
           )}
-
-          {!loading && !error && shops.length === 0 && (
-            <div className="empty-state">
-              <div style={{ marginBottom: 16 }}>
-                <Search size={40} style={{ opacity: 0.35, margin: "0 auto", color: "var(--color-muted)" }} />
-              </div>
-              <div className="empty-state-title">
-                {activeCategory
-                  ? `Chưa có quán nào trong danh mục "${activeCategory.name}"`
-                  : "Không tìm thấy quán phù hợp"}
-              </div>
-              <p className="empty-state-desc">
-                <button
-                  onClick={handleReset}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-primary)", fontWeight: 600, padding: 0 }}
-                >
-                  Xem tất cả quán
-                </button>
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          STORY SECTION
-      ══════════════════════════════ */}
-      <section style={{ background: "var(--color-primary-dark)", padding: "72px 0" }}>
-        <div className="container">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}>
-            <div>
-              <p style={{ color: "var(--color-gold)", fontWeight: 700, fontSize: 12, letterSpacing: "2px", textTransform: "uppercase", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 24, height: 1, background: "var(--color-gold)", display: "inline-block" }} />
-                Câu chuyện FoodGo
-              </p>
-              <h2 style={{ color: "#fff", fontSize: "clamp(24px, 3vw, 34px)", lineHeight: 1.3, marginBottom: 20 }}>
-                Bắt đầu từ điều<br />rất đơn giản
-              </h2>
-              <p style={{ color: "rgba(255,255,255,0.68)", lineHeight: 1.8, fontSize: 15, marginBottom: 24 }}>
-                FoodGo ra đời từ một câu hỏi đơn giản: làm sao để những quán ăn nhỏ, những gánh hàng
-                quen thuộc trong khu phố có thể đến gần hơn với thực khách?
-              </p>
-              <p style={{ color: "rgba(255,255,255,0.52)", lineHeight: 1.8, fontSize: 14, marginBottom: 36 }}>
-                Chúng tôi xây dựng nền tảng này để mọi chủ quán — dù lớn hay nhỏ — đều có cơ hội được
-                nhiều người biết đến, và để mỗi bữa ăn đến tay bạn đều còn nguyên vẹn hương vị.
-              </p>
-              <Link to="/about" className="btn btn-outline-white" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                Đọc thêm <ArrowRight size={15} />
-              </Link>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {[
-                { Icon: Store,  title: "Hỗ trợ quán nhỏ",    desc: "Giúp các chủ quán tiếp cận hàng nghìn khách hàng mới mỗi ngày." },
-                { Icon: Zap,    title: "Đặt món cực nhanh",   desc: "Từ lúc chọn món đến lúc xác nhận đơn chỉ mất 60 giây." },
-                { Icon: Shield, title: "Thanh toán an toàn",  desc: "Tích hợp VNPay, đảm bảo giao dịch bảo mật tuyệt đối." },
-              ].map(({ Icon, title, desc }) => (
-                <div key={title} style={{
-                  display: "flex", gap: 16, alignItems: "flex-start",
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  borderRadius: "var(--radius-md)", padding: "18px 20px",
-                }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: "var(--radius-xs)",
-                    background: "rgba(201,161,90,0.15)", border: "1px solid rgba(201,161,90,0.25)",
-                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                  }}>
-                    <Icon size={18} color="var(--color-gold)" />
-                  </div>
-                  <div>
-                    <div style={{ color: "#fff", fontWeight: 700, fontSize: 14.5, marginBottom: 4 }}>{title}</div>
-                    <div style={{ color: "rgba(255,255,255,0.58)", fontSize: 13.5, lineHeight: 1.6 }}>{desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════
-          CTA STRIP
-      ══════════════════════════════ */}
-      <section style={{ background: "var(--color-gold-pale)", borderTop: "1px solid var(--color-gold-soft)", padding: "48px 0" }}>
-        <div className="container" style={{ textAlign: "center" }}>
-          <h2 style={{ fontSize: 22, marginBottom: 10, color: "var(--color-ink)" }}>
-            Bạn là chủ quán? Hãy cùng FoodGo phát triển!
-          </h2>
-          <p style={{ color: "var(--color-muted)", marginBottom: 28, fontSize: 14.5 }}>
-            Đăng ký đối tác — miễn phí — và tiếp cận hàng chục nghìn khách hàng ngay hôm nay.
-          </p>
-          <Link to="/register" className="btn btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            Đăng ký bán hàng ngay <ChevronRight size={16} />
-          </Link>
         </div>
       </section>
     </div>

@@ -18,7 +18,7 @@ export const CartProvider = ({ children }) => {
       const total = (cart.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
       setCartCount(total);
     } catch {
-      // Giỏ hàng chưa tồn tại hoặc lỗi tạm thời -> không chặn UI, giữ badge ở giá trị cũ
+      setCartCount(0);
     }
   }, [user]);
 

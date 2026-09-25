@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { Order, ShopOrder, OrderItem, Cart, CartItem } = require("../models");
+const { Order, ShopOrder, OrderItem, Cart, CartItem, Review } = require("../models");
 const cartService = require("./cart.service");
 const inventoryService = require("./inventory.service");
 const ApiError = require("../utils/ApiError");
@@ -10,21 +10,36 @@ const { canTransition } = require("../utils/orderStateMachine");
  * Toàn bộ chạy trong 1 transaction: nếu bất kỳ variant nào hết hàng,
  * rollback toàn bộ, không tạo Order nào cả.
  */
-const checkout = async (userId) => {
+const checkout = async (userId, payload = {}) => {
+  const {
+    payment_method = "VNPAY",
+    recipient_name = "",
+    recipient_phone = "",
+    shipping_address = "",
+  } = payload;
+
   const { shopOrders: groups, order_total } = await cartService.getCartGroupedByShop(userId);
 
   const session = await mongoose.startSession();
   let createdOrder;
 
+  const isCOD = payment_method === "COD";
+  const initialOrderStatus = isCOD ? "PAID" : "PENDING_PAYMENT";
+  const initialShopOrderStatus = isCOD ? "CONFIRMED" : "PENDING_PAYMENT";
+
   try {
     await session.withTransaction(async () => {
-      // 1. Tạo Order tổng, trạng thái PENDING_PAYMENT
+      // 1. Tạo Order tổng
       const [order] = await Order.create(
         [
           {
             user_id: userId,
             total_amount: order_total,
-            status: "PENDING_PAYMENT",
+            payment_method,
+            recipient_name,
+            recipient_phone,
+            shipping_address,
+            status: initialOrderStatus,
           },
         ],
         { session }
@@ -39,7 +54,11 @@ const checkout = async (userId) => {
               shop_id: group.shop_id,
               subtotal_amount: group.subtotal_amount,
               shipping_fee: group.shipping_fee,
-              status: "PENDING_PAYMENT",
+              payment_method,
+              recipient_name,
+              recipient_phone,
+              shipping_address,
+              status: initialShopOrderStatus,
             },
           ],
           { session }
@@ -89,11 +108,22 @@ const getOrderDetail = async (userId, orderId) => {
   const shopOrderIds = shopOrders.map((so) => so._id);
   const items = await OrderItem.find({ shop_order_id: { $in: shopOrderIds } });
 
+  const itemIds = items.map((i) => i._id);
+  const reviews = await Review.find({ order_item_id: { $in: itemIds } });
+  const reviewMap = new Map();
+  reviews.forEach((r) => reviewMap.set(r.order_item_id.toString(), r));
+
   return {
     order,
     shopOrders: shopOrders.map((so) => ({
       ...so.toObject(),
-      items: items.filter((i) => i.shop_order_id.toString() === so._id.toString()),
+      items: items
+        .map((i) => {
+          const itemObj = i.toObject();
+          itemObj.review = reviewMap.get(i._id.toString()) || null;
+          return itemObj;
+        })
+        .filter((i) => i.shop_order_id.toString() === so._id.toString()),
     })),
   };
 };
@@ -183,5 +213,61 @@ const completeShopOrder = async (userId, shopOrderId) => {
   return shopOrder;
 };
 
-// Nhớ thêm vào module.exports
-module.exports = { checkout, getOrderDetail, listMyOrders, cancelOrder, completeShopOrder };
+  /**
+ * Tự động hủy các đơn PENDING_PAYMENT quá 24 tiếng mà chưa hoàn tất thanh toán.
+ * Idempotent, giải phóng tồn kho đã reserve.
+ */
+const cancelExpiredUnpaidOrders = async () => {
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const expiredOrders = await Order.find({
+    status: "PENDING_PAYMENT",
+    createdAt: { $lte: cutoff },
+  });
+
+  if (!expiredOrders.length) return { cancelledCount: 0 };
+
+  let cancelledCount = 0;
+  for (const order of expiredOrders) {
+    try {
+      const shopOrders = await ShopOrder.find({ order_id: order._id });
+      const shopOrderIds = shopOrders.map((so) => so._id);
+      const items = await OrderItem.find({ shop_order_id: { $in: shopOrderIds } });
+
+      const session = await mongoose.startSession();
+      try {
+        await session.withTransaction(async () => {
+          for (const item of items) {
+            await inventoryService.releaseStock(item.variant_id, item.quantity, session);
+          }
+          order.status = "CANCELLED";
+          await order.save({ session });
+          await ShopOrder.updateMany(
+            { order_id: order._id },
+            { status: "CANCELLED" },
+            { session }
+          );
+        });
+        cancelledCount++;
+      } finally {
+        await session.endSession();
+      }
+    } catch (err) {
+      console.error(`[OrderTimeout] Failed to cancel order ${order._id}:`, err.message);
+    }
+  }
+
+  if (cancelledCount > 0) {
+    console.log(`[OrderTimeout] Auto-cancelled ${cancelledCount} unpaid orders older than 24h.`);
+  }
+  return { cancelledCount };
+};
+
+module.exports = {
+  checkout,
+  getOrderDetail,
+  listMyOrders,
+  cancelOrder,
+  completeShopOrder,
+  cancelExpiredUnpaidOrders,
+};
+

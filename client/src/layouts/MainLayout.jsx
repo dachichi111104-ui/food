@@ -3,11 +3,36 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useState, useEffect } from "react";
 import Footer from "../components/Footer";
+import ChatbotWidget from "../components/ChatbotWidget";
+import LiveChatWidget from "../components/LiveChatWidget";
 import {
   ShoppingCart, ClipboardList, Menu, X, LogOut,
   ChevronRight, Store, Package, ShoppingBag, LayoutDashboard,
-  CheckSquare, Tag, Flag, Truck, Home, BookOpen, Headphones
+  CheckSquare, Tag, Flag, Truck, Home, BookOpen, Headphones, User, Heart
 } from "lucide-react";
+
+/* ── Logout Confirmation Modal ── */
+const LogoutModal = ({ onConfirm, onCancel }) => (
+  <div className="logout-modal-overlay" onClick={onCancel}>
+    <div className="logout-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="logout-modal-icon">
+        <LogOut size={24} color="var(--color-danger)" />
+      </div>
+      <div className="logout-modal-title">Đăng xuất khỏi FoodGo?</div>
+      <p className="logout-modal-desc">
+        Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?
+      </p>
+      <div className="logout-modal-actions">
+        <button className="btn btn-outline" onClick={onCancel} style={{ minWidth: 100 }}>
+          Hủy
+        </button>
+        <button className="btn btn-danger" onClick={onConfirm} style={{ minWidth: 100 }}>
+          <LogOut size={14} /> Đăng xuất
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const MainLayout = () => {
   const { user, logout } = useAuth();
@@ -15,6 +40,7 @@ const MainLayout = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 8);
@@ -22,10 +48,11 @@ const MainLayout = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    if (!window.confirm("Bạn có chắc muốn đăng xuất?")) return;
-    logout();
+  /* Đóng modal & thực hiện logout */
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
     setMobileOpen(false);
+    logout();
     navigate("/");
   };
 
@@ -34,6 +61,14 @@ const MainLayout = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      {/* ── Logout Modal ── */}
+      {showLogoutModal && (
+        <LogoutModal
+          onConfirm={confirmLogout}
+          onCancel={() => setShowLogoutModal(false)}
+        />
+      )}
+
       {/* ── Header ── */}
       <header className={`app-header${scrolled ? " scrolled" : ""}`}>
         <div className="container">
@@ -59,6 +94,7 @@ const MainLayout = () => {
 
               {user?.role === "seller" && (
                 <>
+                  <NavLink to="/seller/dashboard" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Thống kê</NavLink>
                   <NavLink to="/seller/shop" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Shop của tôi</NavLink>
                   <NavLink to="/seller/products" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Sản phẩm</NavLink>
                   <NavLink to="/seller/orders" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Đơn hàng</NavLink>
@@ -92,6 +128,9 @@ const MainLayout = () => {
 
               {user?.role === "buyer" && (
                 <>
+                  <Link to="/favorites" className="nav-icon-btn" aria-label="Quán yêu thích" title="Quán yêu thích">
+                    <Heart size={18} />
+                  </Link>
                   <Link to="/orders" className="nav-icon-btn" aria-label="Đơn hàng" title="Đơn hàng của tôi">
                     <ClipboardList size={18} />
                   </Link>
@@ -108,10 +147,20 @@ const MainLayout = () => {
                 <>
                   <div className="header-divider" />
                   <div className="nav-user-info">
-                    <div className="nav-avatar">{getInitial(user.name)}</div>
+                    <Link
+                      to="/profile"
+                      className="nav-avatar"
+                      title="Tài khoản của tôi"
+                      style={{ textDecoration: "none", cursor: "pointer" }}
+                    >
+                      {user.avatar_url
+                        ? <img src={user.avatar_url} alt={user.name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+                        : getInitial(user.name)
+                      }
+                    </Link>
                     <span className="nav-username">{user.name}</span>
                     <button
-                      onClick={handleLogout}
+                      onClick={() => setShowLogoutModal(true)}
                       className="btn btn-sm"
                       style={{
                         background: "rgba(255,255,255,0.12)",
@@ -159,6 +208,10 @@ const MainLayout = () => {
           {user?.role === "buyer" && (
             <>
               <div className="mobile-nav-divider" />
+              <Link to="/profile" className="mobile-nav-link" onClick={closeMobile}
+                style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <User size={16} /> Tài khoản của tôi
+              </Link>
               <Link to="/cart" className="mobile-nav-link" onClick={closeMobile}
                 style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <ShoppingCart size={16} /> Giỏ hàng
@@ -227,7 +280,7 @@ const MainLayout = () => {
               <Link to="/register" className="mobile-nav-link" onClick={closeMobile}>Đăng ký</Link>
             </>
           ) : (
-            <button className="mobile-logout-btn" onClick={handleLogout}>
+            <button className="mobile-logout-btn" onClick={() => { setMobileOpen(false); setShowLogoutModal(true); }}>
               <LogOut size={14} style={{ display: "inline", marginRight: 6 }} />
               Đăng xuất ({user.name})
             </button>
@@ -239,6 +292,8 @@ const MainLayout = () => {
         <Outlet />
       </main>
 
+      <ChatbotWidget />
+      <LiveChatWidget />
       <Footer />
     </div>
   );

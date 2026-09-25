@@ -18,7 +18,7 @@ const bcrypt = require("bcryptjs");
 
 const {
   User, Shop, Category, Product, ProductVariant,
-  Order, ShopOrder, OrderItem, Shipment, Review, Cart, CartItem,
+  Order, ShopOrder, OrderItem, Shipment, Review, Cart, CartItem, Banner,
 } = require("./models");
 
 /* ── Helpers ── */
@@ -26,40 +26,29 @@ const hash = (pw) => bcrypt.hashSync(pw, 10);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
-/* ── Unsplash image URLs (public, stable) ──
-   Format: https://images.unsplash.com/photo-<ID>?w=800&q=80&auto=format&fit=crop
-*/
+/* ── Unsplash image URLs (public, stable, accurate food photos) ── */
 const IMG = {
   /* Shop covers */
-  shop_comtam:    "https://images.unsplash.com/photo-1562802378-063ec186a863?w=800&q=80&auto=format&fit=crop",
+  shop_comtam:    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80&auto=format&fit=crop",
   shop_pho:       "https://images.unsplash.com/photo-1503764654157-72d979d9af2f?w=800&q=80&auto=format&fit=crop",
   shop_burger:    "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80&auto=format&fit=crop",
   shop_bbq:       "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=800&q=80&auto=format&fit=crop",
   shop_traSua:    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80&auto=format&fit=crop",
-  // FIX: "shop_comVP" trước đây trỏ đến photo-1512058564366-18510be2db19, một ID bị
-  // dùng lặp lại ở 4 chỗ khác nhau (xem log sửa lỗi cuối file) và khi kiểm tra lại
-  // không đảm bảo hiển thị đúng món cơm — đã đổi sang ảnh cơm gà (com_ga) của chính
-  // shop này, tránh dùng ảnh của shop/món khác làm cover.
-  shop_comVP:     "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=800&q=80&auto=format&fit=crop",
+  shop_comVP:     "https://images.unsplash.com/photo-1569058511696-6e4766f7f6a8?w=800&q=80&auto=format&fit=crop",
 
   /* Shop logos (square thumbnails) */
-  logo_comtam:    "https://images.unsplash.com/photo-1562802378-063ec186a863?w=200&q=80&auto=format&fit=crop",
+  logo_comtam:    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&q=80&auto=format&fit=crop",
   logo_pho:       "https://images.unsplash.com/photo-1503764654157-72d979d9af2f?w=200&q=80&auto=format&fit=crop",
   logo_burger:    "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&q=80&auto=format&fit=crop",
   logo_bbq:       "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=200&q=80&auto=format&fit=crop",
   logo_traSua:    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&q=80&auto=format&fit=crop",
-  logo_comVP:     "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=200&q=80&auto=format&fit=crop",
+  logo_comVP:     "https://images.unsplash.com/photo-1569058511696-6e4766f7f6a8?w=200&q=80&auto=format&fit=crop",
 
   /* Product images */
-  comtam_suonBiCha:  "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=600&q=80&auto=format&fit=crop",
-  comtam_suonNuong:  "https://images.unsplash.com/photo-1609167830220-7164aa360951?w=600&q=80&auto=format&fit=crop",
-  // FIX: ảnh cũ (photo-1512058564366-18510be2db19) không phải cơm tấm — đổi sang ảnh
-  // "Com-Tam-2008.jpg" trên Wikimedia Commons, được chính bài "Cơm tấm" trên nhiều
-  // phiên bản Wikipedia (vi, en, fr, es...) dùng làm ảnh minh hoạ, mô tả đúng: "Vietnamese
-  // broken rice (cơm tấm) with grilled pork, shredded pork and pork skin, fried egg...".
-  // Giấy phép: CC BY-SA 3.0, cần ghi công tác giả (Kham Tran) nếu dùng ngoài phạm vi seed demo.
-  comtam_biTrung:    "https://commons.wikimedia.org/wiki/Special:FilePath/Com-Tam-2008.jpg?width=600",
-  caPheSuaDa:        "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&q=80&auto=format&fit=crop",
+  comtam_suonBiCha:  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80&auto=format&fit=crop",
+  comtam_suonNuong:  "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=600&q=80&auto=format&fit=crop",
+  comtam_biTrung:    "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&q=80&auto=format&fit=crop",
+  caPheSuaDa:        "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&q=80&auto=format&fit=crop",
 
   pho_boTaiChin:     "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=600&q=80&auto=format&fit=crop",
   pho_dBiet:         "https://images.unsplash.com/photo-1503764654157-72d979d9af2f?w=600&q=80&auto=format&fit=crop",
@@ -84,11 +73,9 @@ const IMG = {
   tiramisu:          "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&q=80&auto=format&fit=crop",
   crepe:             "https://images.unsplash.com/photo-1519676867240-f03562e64548?w=600&q=80&auto=format&fit=crop",
 
-  com_ga:            "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=600&q=80&auto=format&fit=crop",
-  // FIX: trước đây trùng ảnh với "comtam_biTrung" (chính là ảnh sushi lỗi) — đổi sang
-  // ảnh cơm sườn nướng đã xác nhận đúng (dùng chung với comtam_suonNuong ở trên).
-  com_thit:          "https://images.unsplash.com/photo-1609167830220-7164aa360951?w=600&q=80&auto=format&fit=crop",
-  com_ca:            "https://images.unsplash.com/photo-1502998070258-dc1338445ac2?w=600&q=80&auto=format&fit=crop",
+  com_ga:            "https://images.unsplash.com/photo-1569058511696-6e4766f7f6a8?w=600&q=80&auto=format&fit=crop",
+  com_thit:          "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80&auto=format&fit=crop",
+  com_ca:            "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&q=80&auto=format&fit=crop",
   nuocEpCam:         "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=600&q=80&auto=format&fit=crop",
 };
 
@@ -100,7 +87,12 @@ const SHOPS_RAW = [
   {
     name: "Cơm tấm Sài Gòn Ba Đình",
     description: "Cơm tấm truyền thống với bì, chả, sườn nướng, trứng ốp la — đậm vị Nam Bộ.",
-    address: "45 Hai Bà Trưng, P. Bến Nghé, Q.1, TP.HCM",
+    address: "45 Hai Bà Trưng, P. Bến Nghé, Q.1, TP. Hồ Chí Minh",
+    city: "TP. Hồ Chí Minh",
+    district: "Quận 1",
+    ward: "Phường Bến Nghé",
+    street: "Hai Bà Trưng",
+    house_number: "45",
     cover_url: IMG.shop_comtam,
     logo_url: IMG.logo_comtam,
     products: [
@@ -115,7 +107,12 @@ const SHOPS_RAW = [
   {
     name: "Phở Hà Nội Gốc — Gia truyền",
     description: "Phở bò hầm xương 12 tiếng, nước dùng trong vắt, thơm lừng gia vị Bắc.",
-    address: "12 Lý Tự Trọng, P. Bến Nghé, Q.1, TP.HCM",
+    address: "12 Lý Tự Trọng, P. Bến Nghé, Q.1, TP. Hồ Chí Minh",
+    city: "TP. Hồ Chí Minh",
+    district: "Quận 1",
+    ward: "Phường Bến Nghé",
+    street: "Lý Tự Trọng",
+    house_number: "12",
     cover_url: IMG.shop_pho,
     logo_url: IMG.logo_pho,
     products: [
@@ -131,7 +128,12 @@ const SHOPS_RAW = [
   {
     name: "Burger & Co. — Thủ Công Việt",
     description: "Burger thủ công patty bò Úc, phô mai tan chảy, sốt BBQ pha chế riêng.",
-    address: "88 Điện Biên Phủ, P.17, Q. Bình Thạnh, TP.HCM",
+    address: "88 Điện Biên Phủ, P.15, Q. Bình Thạnh, TP. Hồ Chí Minh",
+    city: "TP. Hồ Chí Minh",
+    district: "Quận Bình Thạnh",
+    ward: "Phường 15",
+    street: "Điện Biên Phủ",
+    house_number: "88",
     cover_url: IMG.shop_burger,
     logo_url: IMG.logo_burger,
     products: [
@@ -147,7 +149,12 @@ const SHOPS_RAW = [
   {
     name: "Gà Nướng Honey & BBQ",
     description: "Gà nguyên con nướng mật ong, da giòn vàng, thịt thấm gia vị, ăn kèm muối ớt xanh.",
-    address: "203 Hoàng Văn Thụ, P.8, Q. Phú Nhuận, TP.HCM",
+    address: "203 Hai Bà Trưng, P. Tân Định, Q.1, TP. Hồ Chí Minh",
+    city: "TP. Hồ Chí Minh",
+    district: "Quận 1",
+    ward: "Phường Tân Định",
+    street: "Hai Bà Trưng",
+    house_number: "203",
     cover_url: IMG.shop_bbq,
     logo_url: IMG.logo_bbq,
     products: [
@@ -162,7 +169,12 @@ const SHOPS_RAW = [
   {
     name: "Trà Sữa Ơi — Milk Tea & More",
     description: "Trà sữa Đài Loan thuần nguyên liệu, trân châu tươi nấu ngày, hơn 30 topping.",
-    address: "66 Nguyễn Trãi, P. Nguyễn Cư Trinh, Q.1, TP.HCM",
+    address: "66 Bùi Viện, P. Phạm Ngũ Lão, Q.1, TP. Hồ Chí Minh",
+    city: "TP. Hồ Chí Minh",
+    district: "Quận 1",
+    ward: "Phường Phạm Ngũ Lão",
+    street: "Bùi Viện",
+    house_number: "66",
     cover_url: IMG.shop_traSua,
     logo_url: IMG.logo_traSua,
     products: [
@@ -260,10 +272,15 @@ async function seed() {
       name: raw.name,
       description: raw.description,
       address: raw.address,
+      city: raw.city || "TP. Hồ Chí Minh",
+      district: raw.district || "Quận 1",
+      ward: raw.ward || "Phường Bến Nghé",
+      street: raw.street || "Hai Bà Trưng",
+      house_number: raw.house_number || "12",
       logo_url: raw.logo_url,
       cover_url: raw.cover_url,
       status: "approved",
-      rating: 0, // sẽ được tính lại từ reviews
+      rating: 0,
     });
     allShops.push(shop);
 
@@ -298,7 +315,7 @@ async function seed() {
   }
   console.log("   ✔ 3 carts\n");
 
-  /* 5. COMPLETED ORDERS + REVIEWS (tính lại rating sau) */
+  /* 5. COMPLETED ORDERS + REVIEWS */
   console.log("📦 Creating completed orders...");
   const REVIEW_COMMENTS = [
     "Ngon lắm, lần sau sẽ đặt tiếp!", "Giao hàng nhanh, đồ ăn còn nóng sốt.",
@@ -399,6 +416,29 @@ async function seed() {
     await Order.create({ user_id: buyer._id, total_amount: variant.price * 2 + 15000, status: "PENDING_PAYMENT" });
   }
   console.log("   ✔ 2 pending orders\n");
+
+  /* 9. BANNERS */
+  console.log("🖼️ Creating promotional banners...");
+  await Banner.deleteMany({});
+  await Banner.create([
+    {
+      title: "Đại Tiệc Cơm Tấm Sài Gòn ✦",
+      description: "Thưởng thức cơm tấm sườn bì chả nướng mật ong chuẩn vị Nam Bộ hôm nay.",
+      image_url: IMG.shop_comtam,
+      target_url: `/shops/${allShops[0]._id}`,
+      is_active: true,
+      priority: 10,
+    },
+    {
+      title: "Thưởng Thức Phở Bò Gia Truyền",
+      description: "Phở bò Hà Nội hầm xương 12 tiếng, nước dùng ngọt thanh đặc biệt.",
+      image_url: IMG.shop_pho,
+      target_url: `/shops/${allShops[1]._id}`,
+      is_active: true,
+      priority: 5,
+    },
+  ]);
+  console.log("   ✔ 2 active banners\n");
 
   /* DONE */
   const totalProducts = SHOPS_RAW.reduce((s, r) => s + r.products.length, 0);

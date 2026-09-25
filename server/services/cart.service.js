@@ -85,7 +85,7 @@ const getCartDetail = async (userId) => {
         ? { id: variant._id, name: variant.name, price: variant.price, available: variant.stock - variant.reserved_quantity }
         : null,
       product: product ? { id: product._id, name: product.name, image_url: product.image_url } : null,
-      shop: shop ? { id: shop._id, name: shop.name } : null,
+      shop: shop ? { id: shop._id, _id: shop._id, name: shop.name } : null,
       line_total: variant ? variant.price * item.quantity : 0,
     };
   });

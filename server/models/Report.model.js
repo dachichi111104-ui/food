@@ -12,8 +12,19 @@ const reportSchema = new mongoose.Schema(
       ref: "ShopOrder",
       default: null,
     },
+    target_type: {
+      type: String,
+      enum: ["shop", "shipper"],
+      default: "shop",
+    },
+    shipper_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     reason: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
+    images: [{ type: String }], // URLs of proof images (food leakage, damaged packaging, driver issue)
     status: {
       type: String,
       enum: ["OPEN", "RESOLVED"],
