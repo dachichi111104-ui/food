@@ -63,6 +63,15 @@ const markRefunded = async (req, res, next) => {
   }
 };
 
+const getStats = async (req, res, next) => {
+  try {
+    const stats = await adminService.getStats();
+    res.status(200).json(stats);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   listShopsForReview,
   approveShop,
@@ -71,4 +80,5 @@ module.exports = {
   listAllOrders,
   markRefunding,
   markRefunded,
+  getStats,
 };

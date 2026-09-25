@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { GoogleLogin } from "@react-oauth/google";
 import { Mail, Lock, Eye, EyeOff, Loader2, ChevronRight, Utensils } from "lucide-react";
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, loginGoogle } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
@@ -17,11 +18,27 @@ const Login = () => {
     try {
       const user = await login(form.email, form.password);
       if (user.role === "seller") navigate("/seller/shop");
-      else if (user.role === "admin") navigate("/admin/shops");
+      else if (user.role === "admin") navigate("/admin/dashboard");
       else if (user.role === "shipper") navigate("/shipper/orders");
       else navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Email hoặc mật khẩu không đúng");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    if (!credentialResponse?.credential) return;
+    setLoading(true); setError("");
+    try {
+      const user = await loginGoogle(credentialResponse.credential);
+      if (user.role === "seller") navigate("/seller/shop");
+      else if (user.role === "admin") navigate("/admin/dashboard");
+      else if (user.role === "shipper") navigate("/shipper/orders");
+      else navigate("/");
+    } catch (err) {
+      setError(err.response?.data?.message || "Đăng nhập Google thất bại");
     } finally {
       setLoading(false);
     }
@@ -99,6 +116,9 @@ const Login = () => {
             <div className="field">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
                 <label style={{ margin: 0 }}>Mật khẩu</label>
+                <Link to="/forgot-password" style={{ fontSize: 12, color: "var(--color-primary)", textDecoration: "none", fontWeight: 600 }}>
+                  Quên mật khẩu?
+                </Link>
               </div>
               <div className="input-icon-wrap">
                 <Lock size={16} className="input-icon" />
@@ -140,6 +160,26 @@ const Login = () => {
               }
             </button>
           </form>
+
+          {/* Google OAuth Section */}
+          <div style={{ marginTop: 20, textAlign: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
+              <div style={{ flex: 1, height: 1, background: "var(--color-border-light)" }} />
+              <span style={{ fontSize: 12, color: "var(--color-muted)", fontWeight: 600 }}>HOẶC</span>
+              <div style={{ flex: 1, height: 1, background: "var(--color-border-light)" }} />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Đăng nhập Google không thành công")}
+                locale="vi"
+                theme="outline"
+                shape="rectangular"
+                width="380"
+              />
+            </div>
+          </div>
 
           <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid var(--color-border-light)", textAlign: "center" }}>
             <p className="text-muted" style={{ fontSize: 13 }}>

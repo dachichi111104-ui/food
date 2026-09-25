@@ -10,13 +10,28 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    password_hash: { type: String, required: true },
+    password_hash: {
+      type: String,
+      required: function () {
+        return this.provider === "local";
+      },
+    },
     role: {
       type: String,
       enum: ["buyer", "seller", "admin", "shipper"],
       default: "buyer",
       required: true,
     },
+    provider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
+    provider_id: { type: String, default: null },
+    is_verified: { type: Boolean, default: false },
+    verification_token: { type: String, default: null },
+    reset_token: { type: String, default: null },
+    reset_token_expires: { type: Date, default: null },
     phone: { type: String, trim: true },
     address: { type: String, trim: true },
     city: { type: String, trim: true },

@@ -1,4 +1,4 @@
-const { Shop, Category, ShopOrder, Order } = require("../models");
+const { Shop, Category, ShopOrder, Order, OrderItem, User } = require("../models");
 const { canTransition } = require("../utils/orderStateMachine");
 const ApiError = require("../utils/ApiError");
 
@@ -63,8 +63,6 @@ const listAllOrders = async ({ status, page = 1, limit = 10 }) => {
 
 /**
  * Admin đánh dấu hoàn tiền thủ công.
- * Chỉ áp dụng cho ShopOrder đã DELIVERED hoặc COMPLETED (theo state machine).
- * MVP không hoàn tiền tự động qua gateway - chỉ ghi nhận trạng thái + ghi chú.
  */
 const markRefunding = async (shopOrderId) => {
   const shopOrder = await ShopOrder.findById(shopOrderId);
@@ -93,6 +91,124 @@ const markRefunded = async (shopOrderId, note) => {
   return shopOrder;
 };
 
+/**
+ * Admin thống kê Dashboard:
+ * - Tổng doanh thu
+ * - Tổng đơn theo trạng thái
+ * - Top 5 sản phẩm bán chạy
+ * - Doanh thu 7 ngày gần nhất
+ */
+const getStats = async () => {
+  // 1. Tổng doanh thu đơn hoàn tất / đã giao
+  const revenueAgg = await ShopOrder.aggregate([
+    {
+      $match: { status: { $in: ["COMPLETED", "DELIVERED"] } },
+    },
+    {
+      $group: {
+        _id: null,
+        totalRevenue: {
+          $sum: {
+            $subtract: [
+              { $add: ["$subtotal_amount", "$shipping_fee"] },
+              { $ifNull: ["$discount_amount", 0] },
+            ],
+          },
+        },
+      },
+    },
+  ]);
+  const totalRevenue = revenueAgg[0]?.totalRevenue || 0;
+
+  // 2. Tổng đơn và phân loại đơn theo trạng thái
+  const statusAgg = await ShopOrder.aggregate([
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const ordersByStatus = {};
+  let totalOrders = 0;
+  statusAgg.forEach((item) => {
+    ordersByStatus[item._id] = item.count;
+    totalOrders += item.count;
+  });
+
+  // 3. Top 5 sản phẩm bán chạy nhất
+  const topProducts = await OrderItem.aggregate([
+    {
+      $group: {
+        _id: "$product_name_snapshot",
+        totalQuantity: { $sum: "$quantity" },
+        totalSales: { $sum: { $multiply: ["$price_at_order", "$quantity"] } },
+      },
+    },
+    { $sort: { totalQuantity: -1 } },
+    { $limit: 5 },
+  ]);
+
+  // 4. Doanh thu 7 ngày gần nhất
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const recentRevenueAgg = await ShopOrder.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: sevenDaysAgo },
+        status: { $in: ["COMPLETED", "DELIVERED", "CONFIRMED", "PREPARING", "HANDED_TO_SHIPPER"] },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+        },
+        revenue: {
+          $sum: {
+            $subtract: [
+              { $add: ["$subtotal_amount", "$shipping_fee"] },
+              { $ifNull: ["$discount_amount", 0] },
+            ],
+          },
+        },
+        ordersCount: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  // Format 7 ngày liên tục
+  const recentRevenue = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+    const found = recentRevenueAgg.find((r) => r._id === dateStr);
+    recentRevenue.push({
+      date: dateStr,
+      revenue: found ? found.revenue : 0,
+      ordersCount: found ? found.ordersCount : 0,
+    });
+  }
+
+  const totalShops = await Shop.countDocuments();
+  const totalUsers = await User.countDocuments();
+
+  return {
+    totalRevenue,
+    totalOrders,
+    totalShops,
+    totalUsers,
+    ordersByStatus,
+    topProducts,
+    recentRevenue,
+  };
+};
+
 module.exports = {
   listShopsForReview,
   approveShop,
@@ -101,4 +217,5 @@ module.exports = {
   listAllOrders,
   markRefunding,
   markRefunded,
+  getStats,
 };

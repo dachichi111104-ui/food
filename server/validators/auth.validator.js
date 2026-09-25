@@ -1,4 +1,4 @@
-const { body } = require("express-validator");
+const { body, query } = require("express-validator");
 const { validate } = require("./_shared");
 
 const registerRules = [
@@ -20,4 +20,28 @@ const loginRules = [
   validate,
 ];
 
-module.exports = { registerRules, loginRules };
+const forgotPasswordRules = [
+  body("email").isEmail().withMessage("Vui lòng nhập địa chỉ email hợp lệ").normalizeEmail(),
+  validate,
+];
+
+const resetPasswordRules = [
+  body("token").notEmpty().withMessage("Mã token đặt lại mật khẩu là bắt buộc"),
+  body("newPassword")
+    .isLength({ min: 6 })
+    .withMessage("Mật khẩu mới phải có ít nhất 6 ký tự"),
+  validate,
+];
+
+const googleAuthRules = [
+  body("id_token").notEmpty().withMessage("id_token từ Google là bắt buộc"),
+  validate,
+];
+
+module.exports = {
+  registerRules,
+  loginRules,
+  forgotPasswordRules,
+  resetPasswordRules,
+  googleAuthRules,
+};

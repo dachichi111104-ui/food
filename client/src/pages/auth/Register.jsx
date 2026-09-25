@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { GoogleLogin } from "@react-oauth/google";
 import { Mail, Lock, Eye, EyeOff, User, Phone, Utensils, Loader2, ChevronRight, ShoppingBag, Store, Truck, CheckCircle2 } from "lucide-react";
 
 const ROLES = [
@@ -25,7 +26,7 @@ const ROLES = [
 ];
 
 const Register = () => {
-  const { register } = useAuth();
+  const { register, loginGoogle } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "", role: "buyer" });
   const [showPass, setShowPass] = useState(false);
@@ -42,6 +43,22 @@ const Register = () => {
       else navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    if (!credentialResponse?.credential) return;
+    setLoading(true); setError("");
+    try {
+      const user = await loginGoogle(credentialResponse.credential);
+      if (user.role === "seller") navigate("/seller/shop");
+      else if (user.role === "admin") navigate("/admin/dashboard");
+      else if (user.role === "shipper") navigate("/shipper/orders");
+      else navigate("/");
+    } catch (err) {
+      setError(err.response?.data?.message || "Đăng ký bằng Google thất bại");
     } finally {
       setLoading(false);
     }
@@ -103,7 +120,7 @@ const Register = () => {
 
           {/* Role selector */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
-            {ROLES.map(({ value, Icon, label, desc }) => {
+            {ROLES.map(({ value, Icon, label }) => {
               const active = form.role === value;
               return (
                 <button
@@ -230,6 +247,26 @@ const Register = () => {
               }
             </button>
           </form>
+
+          {/* Google Register / Login */}
+          <div style={{ marginTop: 20, textAlign: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
+              <div style={{ flex: 1, height: 1, background: "var(--color-border-light)" }} />
+              <span style={{ fontSize: 12, color: "var(--color-muted)", fontWeight: 600 }}>HOẶC</span>
+              <div style={{ flex: 1, height: 1, background: "var(--color-border-light)" }} />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setError("Đăng ký bằng Google thất bại")}
+                locale="vi"
+                theme="outline"
+                shape="rectangular"
+                width="380"
+              />
+            </div>
+          </div>
 
           <p className="text-muted" style={{ marginTop: 20, fontSize: 12.5, textAlign: "center", lineHeight: 1.6 }}>
             Bằng cách đăng ký, bạn đồng ý với{" "}

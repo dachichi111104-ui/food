@@ -24,3 +24,6 @@ export const markRefunding = (shopOrderId) =>
   api.patch(`/admin/shop-orders/${shopOrderId}/refunding`).then((r) => r.data);
 export const markRefunded = (shopOrderId, note) =>
   api.patch(`/admin/shop-orders/${shopOrderId}/refunded`, { note }).then((r) => r.data);
+
+// Dashboard Statistics
+export const getAdminStats = () => api.get("/admin/stats").then((r) => r.data);

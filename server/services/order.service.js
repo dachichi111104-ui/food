@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
-const { Order, ShopOrder, OrderItem, Cart, CartItem, Review } = require("../models");
+const { Order, ShopOrder, OrderItem, Cart, CartItem, Review, User } = require("../models");
 const cartService = require("./cart.service");
 const inventoryService = require("./inventory.service");
+const emailService = require("./email.service");
 const ApiError = require("../utils/ApiError");
 const { canTransition } = require("../utils/orderStateMachine");
 
@@ -95,7 +96,34 @@ const checkout = async (userId, payload = {}) => {
     await session.endSession();
   }
 
-  return getOrderDetail(userId, createdOrder._id);
+  const detail = await getOrderDetail(userId, createdOrder._id);
+
+  // Send Order Confirmation Email asynchronously
+  try {
+    const user = await User.findById(userId);
+    if (user && user.email) {
+      const orderCode = `#${createdOrder._id.toString().slice(-8).toUpperCase()}`;
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+          <h2 style="color: #2B6CB0;">Xác nhận đơn hàng ${orderCode}</h2>
+          <p>Xin chào <strong>${user.name}</strong>,</p>
+          <p>Cảm ơn bạn đã đặt hàng tại <strong>FoodGo</strong>. Đơn hàng của bạn đã được hệ thống ghi nhận thành công!</p>
+          <div style="background: #F7FAFC; padding: 14px; border-radius: 6px; margin: 16px 0;">
+            <p style="margin: 4px 0;"><strong>Mã đơn hàng:</strong> ${orderCode}</p>
+            <p style="margin: 4px 0;"><strong>Phương thức thanh toán:</strong> ${createdOrder.payment_method}</p>
+            <p style="margin: 4px 0;"><strong>Tổng tiền:</strong> ${createdOrder.total_amount.toLocaleString()}đ</p>
+            <p style="margin: 4px 0;"><strong>Địa chỉ giao hàng:</strong> ${createdOrder.shipping_address || "Tại địa chỉ đã chọn"}</p>
+          </div>
+          <p style="font-size: 13px; color: #718096;">Bạn có thể theo dõi tiến trình đơn hàng trực tiếp trên ứng dụng FoodGo.</p>
+        </div>
+      `;
+      emailService.sendMail(user.email, `[FoodGo] Xác nhận đơn hàng ${orderCode}`, html);
+    }
+  } catch (e) {
+    console.error("[OrderService] Failed to send order confirmation email:", e.message);
+  }
+
+  return detail;
 };
 
 const getOrderDetail = async (userId, orderId) => {

@@ -18,6 +18,44 @@ const login = async (req, res, next) => {
   }
 };
 
+const verifyEmail = async (req, res, next) => {
+  try {
+    const token = req.params.token || req.query.token || req.body.token;
+    const result = await authService.verifyEmail(token);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const forgotPassword = async (req, res, next) => {
+  try {
+    const result = await authService.forgotPassword(req.body.email);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body;
+    const result = await authService.resetPassword(token, newPassword);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const googleLogin = async (req, res, next) => {
+  try {
+    const result = await authService.loginWithGoogle(req.body.id_token);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getMe = async (req, res, next) => {
   try {
     const user = await authService.getMe(req.user.id);
@@ -49,4 +87,14 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getMe, updateProfile, changePassword };
+module.exports = {
+  register,
+  login,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
+  googleLogin,
+  getMe,
+  updateProfile,
+  changePassword,
+};
