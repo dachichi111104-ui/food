@@ -85,12 +85,18 @@ const MainLayout = () => {
               <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
                 Trang chủ
               </NavLink>
-              <NavLink to="/about" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-                Câu chuyện
-              </NavLink>
-              <NavLink to="/support" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-                Hỗ trợ
-              </NavLink>
+
+              {/* General public links for guests and buyers */}
+              {(!user || user.role === "buyer") && (
+                <>
+                  <NavLink to="/about" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+                    Câu chuyện
+                  </NavLink>
+                  <NavLink to="/support" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+                    Hỗ trợ
+                  </NavLink>
+                </>
+              )}
 
               {user?.role === "seller" && (
                 <>
@@ -100,6 +106,7 @@ const MainLayout = () => {
                   <NavLink to="/seller/orders" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Đơn hàng</NavLink>
                 </>
               )}
+
               {user?.role === "admin" && (
                 <>
                   <NavLink to="/admin/dashboard" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Thống kê</NavLink>
@@ -111,6 +118,7 @@ const MainLayout = () => {
                   <NavLink to="/admin/orders" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Đơn hàng</NavLink>
                 </>
               )}
+
               {user?.role === "shipper" && (
                 <NavLink to="/shipper/orders" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Đơn giao hàng</NavLink>
               )}
@@ -161,7 +169,7 @@ const MainLayout = () => {
                         : getInitial(user.name)
                       }
                     </Link>
-                    <span className="nav-username">{user.name}</span>
+                    <span className="nav-username" title={user.name}>{user.name}</span>
                     <button
                       onClick={() => setShowLogoutModal(true)}
                       className="btn btn-sm"
@@ -169,11 +177,13 @@ const MainLayout = () => {
                         background: "rgba(255,255,255,0.12)",
                         color: "#fff",
                         border: "1px solid rgba(255,255,255,0.20)",
-                        fontSize: 12.5,
-                        padding: "6px 10px",
-                        display: "flex",
+                        fontSize: 12,
+                        padding: "5px 10px",
+                        display: "inline-flex",
                         alignItems: "center",
-                        gap: 5,
+                        gap: 4,
+                        whiteSpace: "nowrap",
+                        flexShrink: 0
                       }}
                     >
                       <LogOut size={13} />

@@ -13,11 +13,11 @@ const DashboardLayout = ({ title, subtitle, actions, children }) => (
         }}>
           <div>
             {title && (
-              <h1 style={{ fontSize: "clamp(20px, 3vw, 26px)", marginBottom: subtitle ? 4 : 0 }}>
+              <h1 style={{ fontSize: "clamp(20px, 3vw, 26px)", fontWeight: 800, color: "var(--color-ink)", marginBottom: subtitle ? 6 : 0, lineHeight: 1.3 }}>
                 {title}
               </h1>
             )}
-            {subtitle && <p className="text-muted" style={{ fontSize: 14 }}>{subtitle}</p>}
+            {subtitle && <p className="text-muted" style={{ fontSize: 14, margin: "2px 0 0", lineHeight: 1.5 }}>{subtitle}</p>}
           </div>
           {actions && <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>{actions}</div>}
         </div>

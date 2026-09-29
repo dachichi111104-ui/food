@@ -84,8 +84,10 @@
    ============================================================ */
 *, *::before, *::after { box-sizing: border-box; }
 
-body {
+html, body {
   margin: 0;
+  max-width: 100vw;
+  overflow-x: hidden;
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.6;
@@ -116,7 +118,7 @@ input, select, textarea { font-family: var(--font-body); font-size: 15px; }
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 32px;
+  padding: 0 24px;
 }
 .container-narrow {
   width: 100%;
@@ -147,6 +149,7 @@ input, select, textarea { font-family: var(--font-body); font-size: 15px; }
   top: 0;
   z-index: 100;
   transition: box-shadow var(--transition-base);
+  width: 100%;
 }
 .app-header.scrolled {
   box-shadow: var(--shadow-header);
@@ -155,8 +158,9 @@ input, select, textarea { font-family: var(--font-body); font-size: 15px; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   height: 62px;
+  width: 100%;
 }
 .logo {
   font-family: var(--font-display);
@@ -176,22 +180,29 @@ input, select, textarea { font-family: var(--font-body); font-size: 15px; }
 .nav-main {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.nav-main::-webkit-scrollbar {
+  display: none;
 }
 .nav-link {
-  color: rgba(255,255,255,0.82);
+  color: rgba(255,255,255,0.85);
   text-decoration: none;
   font-weight: 500;
-  font-size: 14px;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  padding: 6px 10px;
+  border-radius: var(--radius-xs);
   transition: color var(--transition-fast), background var(--transition-fast);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .nav-link:hover, .nav-link.active {
   color: var(--color-white);
-  background: rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.14);
 }
 .nav-actions {
   display: flex;
@@ -237,8 +248,15 @@ input, select, textarea { font-family: var(--font-body); font-size: 15px; }
   align-items: center;
   gap: 8px;
   color: var(--color-white);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
+  flex-shrink: 0;
+}
+.nav-username {
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .nav-avatar {
   width: 32px;
