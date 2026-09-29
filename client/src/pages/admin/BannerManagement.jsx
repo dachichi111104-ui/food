@@ -145,8 +145,8 @@ const BannerManagement = () => {
         {/* Header Title */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, flexWrap: "wrap", gap: 14 }}>
           <div>
-            <h1 style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 800, color: "var(--color-ink)", marginBottom: 6 }}>
-              Quản lý Banner Quảng cáo 🖼️
+            <h1 style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 800, color: "var(--color-ink)", marginBottom: 6, display: "flex", alignItems: "center", gap: 10 }}>
+              <Image size={28} style={{ color: "var(--color-primary)" }} /> Quản lý Banner Quảng cáo
             </h1>
             <p className="text-muted" style={{ fontSize: 14 }}>
               Thêm, sửa, hiển thị và thứ tự ưu tiên các banner khuyến mãi trên trang chủ FoodGo.

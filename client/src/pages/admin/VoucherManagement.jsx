@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { listAllVouchers, createVoucher, deleteVoucher } from "../../services/voucher.service";
 import { listPublicShops } from "../../services/shop.service";
-import { Ticket, Plus, Trash2, Tag, Calendar, AlertCircle, CheckCircle2, Loader2, X, Store, Percent, DollarSign } from "lucide-react";
+import { Ticket, Plus, Trash2, Tag, Calendar, AlertCircle, CheckCircle2, Loader2, X, Store, Percent, DollarSign, Globe } from "lucide-react";
 
 const VoucherManagement = () => {
   const [vouchers, setVouchers] = useState([]);
@@ -33,8 +33,10 @@ const VoucherManagement = () => {
         listAllVouchers(),
         listPublicShops({ limit: 100 }),
       ]);
-      setVouchers(vRes || []);
-      setShops(sRes.shops || []);
+      const vList = Array.isArray(vRes) ? vRes : (vRes?.vouchers || []);
+      const sList = Array.isArray(sRes) ? sRes : (sRes?.shops || []);
+      setVouchers(vList);
+      setShops(sList);
     } catch (err) {
       setError(err.response?.data?.message || "Không thể tải danh sách Voucher");
     } finally {
@@ -104,14 +106,17 @@ const VoucherManagement = () => {
     }
   };
 
+  const safeVouchers = Array.isArray(vouchers) ? vouchers : [];
+  const safeShops = Array.isArray(shops) ? shops : [];
+
   return (
     <div style={{ background: "var(--color-bg)", minHeight: "80vh", padding: "36px 0 60px" }}>
       <div className="container" style={{ maxWidth: 1060 }}>
         {/* Header Title */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, flexWrap: "wrap", gap: 14 }}>
           <div>
-            <h1 style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 800, color: "var(--color-ink)", marginBottom: 6 }}>
-              Quản lý Mã giảm giá Voucher 🎟️
+            <h1 style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 800, color: "var(--color-ink)", marginBottom: 6, display: "flex", alignItems: "center", gap: 10 }}>
+              <Ticket size={28} style={{ color: "var(--color-primary)" }} /> Quản lý Mã giảm giá Voucher
             </h1>
             <p className="text-muted" style={{ fontSize: 14 }}>
               Tạo và quản lý danh sách các mã khuyến mãi áp dụng toàn sàn hoặc theo cửa hàng.
@@ -140,7 +145,7 @@ const VoucherManagement = () => {
             <Loader2 size={32} className="spin" style={{ color: "var(--color-primary)", margin: "0 auto 12px" }} />
             <p style={{ color: "var(--color-muted)" }}>Đang tải danh sách Voucher...</p>
           </div>
-        ) : vouchers.length === 0 ? (
+        ) : safeVouchers.length === 0 ? (
           <div className="card card-body" style={{ textAlign: "center", padding: "48px 20px" }}>
             <Ticket size={48} color="var(--color-muted)" style={{ margin: "0 auto 14px" }} />
             <h3 style={{ fontSize: 18, marginBottom: 8 }}>Chưa có Voucher nào</h3>
@@ -151,8 +156,8 @@ const VoucherManagement = () => {
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
-            {vouchers.map((v) => {
-              const targetShop = shops.find((s) => s._id === v.shop_id);
+            {safeVouchers.map((v) => {
+              const targetShop = safeShops.find((s) => s._id === v.shop_id);
               const isExpired = new Date(v.valid_to) < new Date();
 
               return (
@@ -163,8 +168,16 @@ const VoucherManagement = () => {
                         <span style={{ fontSize: 18, fontWeight: 800, color: "var(--color-primary)", letterSpacing: 1 }}>
                           {v.code}
                         </span>
-                        <div style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 2 }}>
-                          {targetShop ? `🏪 Quán: ${targetShop.name}` : "🌐 Toàn sàn FoodGo"}
+                        <div style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 4, display: "flex", alignItems: "center", gap: 5 }}>
+                          {targetShop ? (
+                            <>
+                              <Store size={13} /> Quán: {targetShop.name}
+                            </>
+                          ) : (
+                            <>
+                              <Globe size={13} /> Toàn sàn FoodGo
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -178,17 +191,17 @@ const VoucherManagement = () => {
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span className="text-muted">Mức giảm:</span>
                         <span style={{ fontWeight: 700, color: "var(--color-ink)" }}>
-                          {v.discount_type === "PERCENT" ? `${v.discount_value}%` : `${v.discount_value.toLocaleString()}đ`}
+                          {v.discount_type === "PERCENT" ? `${v.discount_value}%` : `${v.discount_value?.toLocaleString()}đ`}
                           {v.max_discount_amount ? ` (Tối đa ${v.max_discount_amount.toLocaleString()}đ)` : ""}
                         </span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span className="text-muted">Đơn tối thiểu:</span>
-                        <span style={{ fontWeight: 600 }}>{v.min_order_amount.toLocaleString()}đ</span>
+                        <span style={{ fontWeight: 600 }}>{v.min_order_amount?.toLocaleString() || 0}đ</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span className="text-muted">Lượt đã dùng:</span>
-                        <span style={{ fontWeight: 600 }}>{v.used_count} / {v.usage_limit ? v.usage_limit : "∞"}</span>
+                        <span style={{ fontWeight: 600 }}>{v.used_count || 0} / {v.usage_limit ? v.usage_limit : "∞"}</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "var(--color-muted)" }}>
                         <span>Hạn dùng:</span>
@@ -323,10 +336,10 @@ const VoucherManagement = () => {
                   <div className="field">
                     <label>Phạm vi áp dụng</label>
                     <select className="input" value={shopId} onChange={(e) => setShopId(e.target.value)}>
-                      <option value="">🌐 Áp dụng toàn sàn FoodGo</option>
-                      {shops.map((s) => (
+                      <option value="">Áp dụng toàn sàn FoodGo</option>
+                      {safeShops.map((s) => (
                         <option key={s._id} value={s._id}>
-                          🏪 Quán: {s.name}
+                          Quán: {s.name}
                         </option>
                       ))}
                     </select>
