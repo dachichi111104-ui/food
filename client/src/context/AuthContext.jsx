@@ -26,7 +26,7 @@ const SessionExpiredModal = ({ onConfirm }) => (
         Phiên đăng nhập đã hết
       </h3>
       <p style={{ fontSize: 13.5, color: "var(--color-muted)", lineHeight: 1.5, marginBottom: 24 }}>
-        Phiên đăng nhập của bạn đã hết hạn (quá 30 phút). Vui lòng đăng nhập lại để tiếp tục sử dụng hệ thống FoodGo.
+        Phiên đăng nhập của bạn đã hết hạn (quá 20 phút). Vui lòng đăng nhập lại để tiếp tục sử dụng hệ thống FoodGo.
       </p>
       <button
         onClick={onConfirm}
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }) => {
       const loginTime = localStorage.getItem("loginTime");
       if (loginTime) {
         const elapsed = Date.now() - Number(loginTime);
-        if (elapsed >= 30 * 60 * 1000) {
+        if (elapsed >= 20 * 60 * 1000) {
           setShowSessionExpiredModal(true);
         }
       }

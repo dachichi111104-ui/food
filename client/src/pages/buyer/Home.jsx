@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { listShops, listPublicCategories } from "../../services/shop.service";
 import { toggleFavorite } from "../../services/favorite.service";
 import BannerCarousel from "../../components/BannerCarousel";
+import FoodShowcaseSection from "../../components/FoodShowcaseSection";
 import { useAuth } from "../../context/AuthContext";
 import {
   Search, MapPin, Star, ChevronRight, Utensils,
@@ -280,6 +281,9 @@ const Home = () => {
       {/* Banner Carousel */}
       <BannerCarousel />
 
+      {/* Interactive Food Showcase Section (matching ui.mp4) */}
+      <FoodShowcaseSection />
+
       {/* ══════════════════════════════
           CATEGORY PILLS WITH ICONS
       ══════════════════════════════ */}
@@ -322,7 +326,7 @@ const Home = () => {
       )}
 
       {/* RESTAURANT GRID */}
-      <section style={{ padding: "40px 0 72px" }}>
+      <section id="shops-section" style={{ padding: "40px 0 72px" }}>
         <div className="container">
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
