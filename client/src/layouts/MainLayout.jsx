@@ -8,7 +8,7 @@ import LiveChatWidget from "../components/LiveChatWidget";
 import {
   ShoppingCart, ClipboardList, Menu, X, LogOut,
   ChevronRight, Store, Package, ShoppingBag, LayoutDashboard,
-  CheckSquare, Tag, Flag, Truck, Home, BookOpen, Headphones, User, Heart
+  CheckSquare, Tag, Flag, Truck, Home, BookOpen, Headphones, User, Heart, BarChart3, Image, Ticket
 } from "lucide-react";
 
 /* ── Logout Confirmation Modal ── */
@@ -102,7 +102,10 @@ const MainLayout = () => {
               )}
               {user?.role === "admin" && (
                 <>
+                  <NavLink to="/admin/dashboard" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Thống kê</NavLink>
                   <NavLink to="/admin/shops" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Duyệt shop</NavLink>
+                  <NavLink to="/admin/banners" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Banner</NavLink>
+                  <NavLink to="/admin/vouchers" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Voucher</NavLink>
                   <NavLink to="/admin/categories" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Danh mục</NavLink>
                   <NavLink to="/admin/reports" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Khiếu nại</NavLink>
                   <NavLink to="/admin/orders" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>Đơn hàng</NavLink>
@@ -245,9 +248,21 @@ const MainLayout = () => {
           {user?.role === "admin" && (
             <>
               <div className="mobile-nav-divider" />
+              <Link to="/admin/dashboard" className="mobile-nav-link" onClick={closeMobile}
+                style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <BarChart3 size={16} /> Thống kê
+              </Link>
               <Link to="/admin/shops" className="mobile-nav-link" onClick={closeMobile}
                 style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <CheckSquare size={16} /> Duyệt shop
+              </Link>
+              <Link to="/admin/banners" className="mobile-nav-link" onClick={closeMobile}
+                style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Image size={16} /> Quản lý Banner
+              </Link>
+              <Link to="/admin/vouchers" className="mobile-nav-link" onClick={closeMobile}
+                style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Ticket size={16} /> Quản lý Voucher
               </Link>
               <Link to="/admin/categories" className="mobile-nav-link" onClick={closeMobile}
                 style={{ display: "flex", alignItems: "center", gap: 10 }}>

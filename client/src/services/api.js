@@ -13,14 +13,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Tự động logout nếu token hết hạn/không hợp lệ (401)
+// Tự động logout & bắn event thông báo nếu token hết hạn/không hợp lệ (401)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      // Không redirect cứng ở đây để tránh vòng lặp, AuthContext sẽ xử lý qua state
+      localStorage.removeItem("loginTime");
+      window.dispatchEvent(new Event("session-expired"));
     }
     return Promise.reject(error);
   }

@@ -32,6 +32,8 @@ import ShopApproval from "./pages/admin/ShopApproval";
 import CategoryManagement from "./pages/admin/CategoryManagement";
 import ReportManagement from "./pages/admin/ReportManagement";
 import OrdersMonitor from "./pages/admin/OrdersMonitor";
+import BannerManagement from "./pages/admin/BannerManagement";
+import VoucherManagement from "./pages/admin/VoucherManagement";
 
 import ShipperOrders from "./pages/shipper/ShipperOrders";
 import PaymentResult from "./pages/buyer/PaymentResult";
@@ -94,6 +96,8 @@ function App() {
                   <Route path="/admin/categories" element={<CategoryManagement />} />
                   <Route path="/admin/reports" element={<ReportManagement />} />
                   <Route path="/admin/orders" element={<OrdersMonitor />} />
+                  <Route path="/admin/banners" element={<BannerManagement />} />
+                  <Route path="/admin/vouchers" element={<VoucherManagement />} />
                 </Route>
 
                 {/* Shipper */}
