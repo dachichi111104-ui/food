@@ -1,24 +1,34 @@
 import { useState, useEffect, useRef } from "react";
 import { Sparkles, ShoppingBag, CheckCircle2, ChevronRight, Star, Flame, Utensils, Award, ArrowRight, MousePointerClick, Layers } from "lucide-react";
-import comtamImg from "../assets/comtam.jpg";
 
-const BURGER_IMG = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80";
+/* Import Burger PNG Layer Cutouts (created from media_1790710681463.png) */
+import b1 from "../assets/burger/layer1_top_bun.png";
+import b2 from "../assets/burger/layer2_bacon.png";
+import b3 from "../assets/burger/layer3_tomatoes.png";
+import b4 from "../assets/burger/layer4_patty.png";
+import b5 from "../assets/burger/layer5_bottom.png";
+
+/* Import Com Tam PNG Layer Cutouts (created from comtam.jpg) */
+import c1 from "../assets/comtam/layer1_mohanh.png";
+import c2 from "../assets/comtam/layer2_suon.png";
+import c3 from "../assets/comtam/layer3_cha.png";
+import c4 from "../assets/comtam/layer4_nuocmam.png";
+import c5 from "../assets/comtam/layer5_com.png";
 
 const SHOWCASE_ITEMS = {
   burger: {
     id: "burger",
     title: "ALL-STAR DOUBLE BURGER",
     tagline: "BUILT LIKE AN ALL-STAR",
-    subtitle: "Vỏ bánh nướng bơ tỏi giòn rụm, 100% bò nướng nhập khẩu hòa quyện cùng sốt phô mai đặc biệt.",
+    subtitle: "Vỏ bánh nướng bơ tỏi giòn rụm, 100% bò nướng nhập khẩu hòa quyện cùng thịt xông khói & phô mai đặc biệt.",
     price: "79.000đ",
     badge: "Món Bán Chạy #1",
-    img: BURGER_IMG,
     layers: [
-      { id: 1, name: "Vỏ Bánh Mì Nướng Bơ Tỏi", desc: "Giòn thơm, thơm béo vị bơ nguyên chất" },
-      { id: 2, name: "Sốt Phô Mai Cheddar Béo Ngậy", desc: "Được pha chế theo công thức độc quyền" },
-      { id: 3, name: "Thịt Bò Nướng Than Hồng", desc: "Thịt bò Úc nhập khẩu 100% mềm ngọt" },
-      { id: 4, name: "Xà Lách & Cà Chua Tươi", desc: "Nông sản Đà Lạt tươi sạch trong ngày" },
-      { id: 5, name: "Đế Bánh Nướng Giòn Rụm", desc: "Giữ độ nóng hổi và hương vị vẹn toàn" },
+      { id: 1, name: "Vỏ Bánh Mì Nướng Bơ Tỏi", desc: "Giòn thơm, thơm béo vị bơ nguyên chất", img: b1 },
+      { id: 2, name: "Thịt Xông Khói Giòn Rụm", desc: "Bacon nướng giòn thơm béo ngậy", img: b2 },
+      { id: 3, name: "Cà Chua Tươi Tươi Sạch", desc: "Nông sản Đà Lạt tươi sạch trong ngày", img: b3 },
+      { id: 4, name: "Thịt Bò Nướng Than Hồng", desc: "Thịt bò Úc nhập khẩu 100% mềm ngọt", img: b4 },
+      { id: 5, name: "Rau Xà Lách & Đế Bánh", desc: "Giữ độ nóng hổi và hương vị vẹn toàn", img: b5 },
     ]
   },
   comtam: {
@@ -28,13 +38,12 @@ const SHOWCASE_ITEMS = {
     subtitle: "Sườn nướng mật ong thơm lừng, chả trứng hấp mềm béo & nước mắm kẹo ớt tỏi đậm đà.",
     price: "65.000đ",
     badge: "Signature FoodGo",
-    img: comtamImg,
     layers: [
-      { id: 1, name: "Mỡ Hành Phi Thơm Giòn", desc: "Hành lá tươi phi mỡ lợn thơm nức" },
-      { id: 2, name: "Sườn Nướng Mật Ong", desc: "Ướp đậm đà 12 tiếng, nướng than hồng" },
-      { id: 3, name: "Chả Trứng Hấp & Bì Giòn", desc: "Trứng vịt muối béo ngậy mềm mịn" },
-      { id: 4, name: "Nước Mắm Kẹo Tỏi Ớt", desc: "Sóng sánh chuẩn vị truyền thống" },
-      { id: 5, name: "Cơm Tấm Hạt Dẻo Nóng", desc: "Gạo tấm thơm dẻo nguyên hạt tuyển chọn" },
+      { id: 1, name: "Mỡ Hành Phi Thơm Giòn", desc: "Hành lá tươi phi mỡ lợn thơm nức", img: c1 },
+      { id: 2, name: "Sườn Nướng Mật Ong", desc: "Ướp đậm đà 12 tiếng, nướng than hồng", img: c2 },
+      { id: 3, name: "Chả Trứng Hấp & Bì Giòn", desc: "Trứng vịt muối béo ngậy mềm mịn", img: c3 },
+      { id: 4, name: "Nước Mắm Kẹo Tỏi Ớt", desc: "Sóng sánh chuẩn vị truyền thống", img: c4 },
+      { id: 5, name: "Cơm Tấm Hạt Dẻo Nóng", desc: "Gạo tấm thơm dẻo nguyên hạt tuyển chọn", img: c5 },
     ]
   }
 };
@@ -62,7 +71,7 @@ const FEATURED_FOOD_CARDS = [
     tagline: "Món Truyền Thống",
     price: "65.000đ",
     rating: 4.8,
-    img: comtamImg,
+    img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80",
   },
   {
     id: "f4",
@@ -74,12 +83,10 @@ const FEATURED_FOOD_CARDS = [
   },
 ];
 
-const SLICE_HEIGHT = 68; // Height of each image slice layer
-
 const FoodShowcaseSection = () => {
   const [activeTab, setActiveTab] = useState("burger");
   const [selectedLayerId, setSelectedLayerId] = useState(0); // 0 = none selected
-  const [isIntroExploded, setIsIntroExploded] = useState(true); // 2.5s scroll explode state
+  const [isIntroExploded, setIsIntroExploded] = useState(true); // 2.5s intro explode state
   const sectionRef = useRef(null);
 
   const item = SHOWCASE_ITEMS[activeTab];
@@ -141,7 +148,7 @@ const FoodShowcaseSection = () => {
             Phát hiện & bóc tách <span style={{ color: "var(--color-primary)" }}>từng mảnh ảnh nguyên liệu</span>
           </h2>
           <p style={{ color: "var(--color-muted)", fontSize: 15, lineHeight: 1.6 }}>
-            Hình ảnh món ăn được phân tách thành 5 mảnh nguyên liệu thật. Ban đầu lướt xuống các mảnh tự tách ra trong 2.5s rồi gộp lại, bấm vào tên nguyên liệu nào thì đúng mảnh ảnh đó nẩy lên!
+            Hình ảnh được phân tách thành 5 mảnh nguyên liệu thật. Ban đầu lướt xuống các mảnh tự tách ra trong 2.5s rồi gộp lại, bấm chọn nguyên liệu nào thì đúng mảnh ảnh đó nẩy lên!
           </p>
 
           {/* Clean Dish Toggle Tabs */}
@@ -173,18 +180,18 @@ const FoodShowcaseSection = () => {
           </div>
         </div>
 
-        {/* Showcase Card — Real Image Sliced Exploded Layer Canvas */}
+        {/* Showcase Card — 5 PNG Image Slices Canvas */}
         <div style={{
           display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "center",
           background: "var(--color-white)", borderRadius: 24, padding: "40px",
           border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
           marginBottom: 56
         }}>
-          {/* Left: Real Food Image Split into 5 Interactive Layer Cutouts */}
+          {/* Left: 5 Separated Transparent PNG Ingredient Layer Images Canvas */}
           <div style={{ position: "relative", textAlign: "center" }}>
             <div style={{
-              position: "relative", width: "100%", maxWidth: 440, height: 360, margin: "0 auto",
-              borderRadius: 24, padding: 10, background: "var(--color-cream-mid)",
+              position: "relative", width: "100%", maxWidth: 440, height: 420, margin: "0 auto",
+              borderRadius: 24, padding: 20, background: "var(--color-cream-mid)",
               border: "1px solid var(--color-border-light)", display: "flex",
               flexDirection: "column", alignItems: "center", justifyContent: "center"
             }}>
@@ -206,27 +213,27 @@ const FoodShowcaseSection = () => {
                 {item.price}
               </div>
 
-              {/* Stack of 5 Real Image Slice Cutouts */}
+              {/* Stack of 5 Isolated PNG Ingredient Images */}
               <div style={{
-                position: "relative", width: 340, height: SLICE_HEIGHT * 5,
-                borderRadius: 16, overflow: "visible"
+                position: "relative", width: 280, height: 320,
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"
               }}>
                 {item.layers.map((layer, idx) => {
                   const isSelected = selectedLayerId === layer.id;
 
-                  // 1. Calculate Intro 2.5s Exploded Offset
+                  // 1. Initial 2.5s Intro Exploded Offset (Spreads all 5 PNG layers apart!)
                   let translateY = 0;
                   if (isIntroExploded) {
-                    translateY = (idx - 2) * 32; // -64px, -32px, 0px, 32px, 64px
+                    translateY = (idx - 2) * 45; // -90px, -45px, 0px, 45px, 90px
                   }
 
-                  // 2. Individual Click / Hover Offset -> ONLY this image slice jumps up!
+                  // 2. Individual Click / Hover Offset -> ONLY THIS PNG LAYER JUMPS UP!
                   if (isSelected) {
-                    translateY -= 26;
+                    translateY -= 36;
                   }
 
-                  const scale = isSelected ? 1.06 : isIntroExploded ? 1.02 : 1;
-                  const zIndex = isSelected ? 25 : 10 - idx;
+                  const scale = isSelected ? 1.15 : isIntroExploded ? 1.05 : 1;
+                  const zIndex = isSelected ? 30 : 10 - idx;
 
                   return (
                     <div
@@ -235,46 +242,48 @@ const FoodShowcaseSection = () => {
                       onMouseEnter={() => setSelectedLayerId(layer.id)}
                       style={{
                         position: "absolute",
-                        top: idx * SLICE_HEIGHT,
-                        left: 0,
-                        width: "100%",
-                        height: SLICE_HEIGHT,
-                        overflow: "hidden",
-                        borderRadius: idx === 0 ? "16px 16px 4px 4px" : idx === 4 ? "4px 4px 16px 16px" : 4,
-                        border: isSelected ? "3px solid var(--color-gold)" : isIntroExploded ? "1px dashed rgba(201,161,90,0.6)" : "none",
-                        boxShadow: isSelected
-                          ? "0 12px 24px rgba(201,161,90,0.5), 0 0 20px rgba(122,31,43,0.3)"
-                          : "0 2px 8px rgba(0,0,0,0.08)",
+                        top: activeTab === "burger" ? (idx * 30 + 30) : (idx * 40 + 20),
+                        width: activeTab === "burger" ? 260 : 280,
                         transform: `translateY(${translateY}px) scale(${scale})`,
-                        transition: "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), border 0.3s ease, box-shadow 0.3s ease",
+                        transition: "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease",
                         cursor: "pointer",
-                        zIndex: zIndex
+                        zIndex: zIndex,
+                        filter: isSelected
+                          ? "drop-shadow(0 12px 20px rgba(201,161,90,0.8)) brightness(1.1)"
+                          : isIntroExploded
+                          ? "drop-shadow(0 6px 12px rgba(0,0,0,0.25))"
+                          : "none"
                       }}
                     >
-                      {/* Image Slice Cropped via negative marginTop */}
+                      {/* PNG Ingredient Layer Image */}
                       <img
-                        src={item.img}
+                        src={layer.img}
                         alt={layer.name}
                         style={{
-                          width: 340,
-                          height: SLICE_HEIGHT * 5,
-                          objectFit: "cover",
-                          marginTop: -idx * SLICE_HEIGHT,
+                          width: "100%",
+                          height: "auto",
                           display: "block",
-                          filter: isSelected ? "brightness(1.08) contrast(1.05)" : "none",
-                          transition: "filter 0.3s ease"
+                          objectFit: "contain",
+                          pointerEvents: "auto"
                         }}
                       />
 
-                      {/* Floating Slice Label Overlay when Selected or Exploding */}
+                      {/* Floating Label Badge on Selected Layer */}
                       {(isSelected || isIntroExploded) && (
                         <div style={{
-                          position: "absolute", top: 8, left: 12,
-                          background: isSelected ? "var(--color-primary-dark)" : "rgba(36,21,18,0.75)",
-                          color: "#fff", padding: "3px 10px", borderRadius: 999,
-                          fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", gap: 5,
-                          border: "1px solid var(--color-gold)",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
+                          position: "absolute",
+                          top: -6,
+                          right: -10,
+                          background: isSelected ? "var(--color-primary-dark)" : "rgba(36,21,18,0.85)",
+                          color: "#fff",
+                          padding: "4px 10px",
+                          borderRadius: 999,
+                          fontSize: 11,
+                          fontWeight: 800,
+                          border: "1.5px solid var(--color-gold)",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                          whiteSpace: "nowrap",
+                          animation: "bounceIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)"
                         }}>
                           <span style={{ color: "var(--color-gold)" }}>{layer.id}.</span> {layer.name}
                         </div>
@@ -286,13 +295,13 @@ const FoodShowcaseSection = () => {
 
               {/* Status Banner */}
               <div style={{
-                fontSize: 11.5, color: "var(--color-muted)", marginTop: 14,
+                fontSize: 11.5, color: "var(--color-muted)", marginTop: 16,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6
               }}>
                 <MousePointerClick size={14} color="var(--color-primary)" />
                 {isIntroExploded
-                  ? "Đang tự động bóc tách 5 mảnh ảnh..."
-                  : "Bấm vào từng tên nguyên liệu bên phải để mảnh ảnh tương ứng nẩy lên!"
+                  ? "Đang tự động bóc tách 5 mảnh nguyên liệu thật..."
+                  : "Bấm vào tên nguyên liệu bên phải để mảnh nguyên liệu đó nẩy lên!"
                 }
               </div>
             </div>
