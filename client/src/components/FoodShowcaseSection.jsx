@@ -1,5 +1,8 @@
-import { useState } from "react";
-import { Sparkles, ShoppingBag, CheckCircle2, ChevronRight, Star, Flame, Utensils, Award, ArrowRight } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Sparkles, ShoppingBag, CheckCircle2, ChevronRight, Star, Flame, Utensils, Award, ArrowRight, MousePointerClick, Layers } from "lucide-react";
+import comtamImg from "../assets/comtam.jpg";
+
+const BURGER_IMG = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80";
 
 const SHOWCASE_ITEMS = {
   burger: {
@@ -9,13 +12,13 @@ const SHOWCASE_ITEMS = {
     subtitle: "Vỏ bánh nướng bơ tỏi giòn rụm, 100% bò nướng nhập khẩu hòa quyện cùng sốt phô mai đặc biệt.",
     price: "79.000đ",
     badge: "Món Bán Chạy #1",
-    img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80",
+    img: BURGER_IMG,
     layers: [
-      { id: 1, name: "Vỏ Bánh Mì Nướng Bơ Tỏi", desc: "Giòn thơm, thơm béo vị bơ nguyên chất" },
-      { id: 2, name: "Sốt Phô Mai Cheddar Béo Ngậy", desc: "Được pha chế theo công thức độc quyền" },
-      { id: 3, name: "Thịt Bò Nướng Than Hồng", desc: "Thịt bò Úc nhập khẩu 100% mềm ngọt" },
-      { id: 4, name: "Xà Lách & Cà Chua Tươi", desc: "Nông sản Đà Lạt tươi sạch trong ngày" },
-      { id: 5, name: "Đế Bánh Nướng Giòn Rụm", desc: "Giữ độ nóng hổi và hương vị vẹn toàn" },
+      { id: 1, name: "Vỏ Bánh Mì Nướng Bơ Tỏi", desc: "Giòn thơm, thơm béo vị bơ nguyên chất", color: "#E09A45" },
+      { id: 2, name: "Sốt Phô Mai Cheddar Béo Ngậy", desc: "Được pha chế theo công thức độc quyền", color: "#F7B52C" },
+      { id: 3, name: "Thịt Bò Nướng Than Hồng", desc: "Thịt bò Úc nhập khẩu 100% mềm ngọt", color: "#5C2918" },
+      { id: 4, name: "Xà Lách & Cà Chua Tươi", desc: "Nông sản Đà Lạt tươi sạch trong ngày", color: "#4CAF50" },
+      { id: 5, name: "Đế Bánh Nướng Giòn Rụm", desc: "Giữ độ nóng hổi và hương vị vẹn toàn", color: "#D48B38" },
     ]
   },
   comtam: {
@@ -25,13 +28,13 @@ const SHOWCASE_ITEMS = {
     subtitle: "Sườn nướng mật ong thơm lừng, chả trứng hấp mềm béo & nước mắm kẹo ớt tỏi đậm đà.",
     price: "65.000đ",
     badge: "Signature FoodGo",
-    img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+    img: comtamImg,
     layers: [
-      { id: 1, name: "Mỡ Hành Phi Thơm Giòn", desc: "Hành lá tươi phi mỡ lợn thơm nức" },
-      { id: 2, name: "Sườn Nướng Mật Ong", desc: "Ướp đậm đà 12 tiếng, nướng than hồng" },
-      { id: 3, name: "Chả Trứng Hấp & Bì Giòn", desc: "Trứng vịt muối béo ngậy mềm mịn" },
-      { id: 4, name: "Nước Mắm Kẹo Tỏi Ớt", desc: "Sóng sánh chuẩn vị truyền thống" },
-      { id: 5, name: "Cơm Tấm Hạt Dẻo Nóng", desc: "Gạo tấm thơm dẻo nguyên hạt tuyển chọn" },
+      { id: 1, name: "Mỡ Hành Phi Thơm Giòn", desc: "Hành lá tươi phi mỡ lợn thơm nức", color: "#2E7D32" },
+      { id: 2, name: "Sườn Nướng Mật Ong", desc: "Ướp đậm đà 12 tiếng, nướng than hồng", color: "#7B241C" },
+      { id: 3, name: "Chả Trứng Hấp & Bì Giòn", desc: "Trứng vịt muối béo ngậy mềm mịn", color: "#F39C12" },
+      { id: 4, name: "Nước Mắm Kẹo Tỏi Ớt", desc: "Sóng sánh chuẩn vị truyền thống", color: "#E67E22" },
+      { id: 5, name: "Cơm Tấm Hạt Dẻo Nóng", desc: "Gạo tấm thơm dẻo nguyên hạt tuyển chọn", color: "#D7CCC8" },
     ]
   }
 };
@@ -59,7 +62,7 @@ const FEATURED_FOOD_CARDS = [
     tagline: "Món Truyền Thống",
     price: "65.000đ",
     rating: 4.8,
-    img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=500&q=80",
+    img: comtamImg,
   },
   {
     id: "f4",
@@ -73,24 +76,54 @@ const FEATURED_FOOD_CARDS = [
 
 const FoodShowcaseSection = () => {
   const [activeTab, setActiveTab] = useState("burger");
-  const [activeLayerId, setActiveLayerId] = useState(1);
+  const [selectedLayerId, setSelectedLayerId] = useState(0); // 0 = none selected
+  const [isIntroExploded, setIsIntroExploded] = useState(true); // Initial scroll explode state
+  const sectionRef = useRef(null);
 
   const item = SHOWCASE_ITEMS[activeTab];
-  const currentLayer = item.layers.find((l) => l.id === activeLayerId) || item.layers[0];
+
+  // Hiệu ứng tự bóc tách trong 2.5 giây đầu khi chọn món hoặc cuộn tới
+  useEffect(() => {
+    setIsIntroExploded(true);
+    setSelectedLayerId(0);
+    const timer = setTimeout(() => {
+      setIsIntroExploded(false);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [activeTab]);
+
+  // Tự kích hoạt intro explode khi cuộn trang tới section
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsIntroExploded(true);
+          setTimeout(() => setIsIntroExploded(false), 2500);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const handleTabChange = (tabKey) => {
     setActiveTab(tabKey);
-    setActiveLayerId(1);
   };
 
+  const selectedLayer = item.layers.find((l) => l.id === selectedLayerId);
+
   return (
-    <section style={{
-      background: "linear-gradient(180deg, var(--color-bg) 0%, #F5EDE0 100%)",
-      color: "var(--color-ink)",
-      padding: "56px 0 64px",
-      borderTop: "1px solid var(--color-border-light)",
-      borderBottom: "1px solid var(--color-border-light)",
-    }}>
+    <section
+      ref={sectionRef}
+      style={{
+        background: "linear-gradient(180deg, var(--color-bg) 0%, #F5EDE0 100%)",
+        color: "var(--color-ink)",
+        padding: "56px 0 64px",
+        borderTop: "1px solid var(--color-border-light)",
+        borderBottom: "1px solid var(--color-border-light)",
+      }}
+    >
       <div className="container">
         {/* Header Title */}
         <div style={{ textAlign: "center", maxWidth: 680, margin: "0 auto 36px" }}>
@@ -106,7 +139,7 @@ const FoodShowcaseSection = () => {
             Khám phá hương vị <span style={{ color: "var(--color-primary)" }}>từng lớp nguyên liệu</span>
           </h2>
           <p style={{ color: "var(--color-muted)", fontSize: 15, lineHeight: 1.6 }}>
-            Bấm chọn để trải nghiệm chi tiết các thành phần món ăn signature được chế biến kỳ công theo công thức độc quyền.
+            Trang web tự động bóc tách thành phần trong 2.5 giây đầu, sau đó bấm chọn từng nguyên liệu để xem hiệu ứng nẩy lên sống động!
           </p>
 
           {/* Clean Dish Toggle Tabs */}
@@ -138,74 +171,120 @@ const FoodShowcaseSection = () => {
           </div>
         </div>
 
-        {/* Showcase Card — High-res Food Photo + Interactive Layer Spotlight */}
+        {/* Interactive Showcase Card — Image Spotlight + Animated Exploded Slices */}
         <div style={{
           display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "center",
           background: "var(--color-white)", borderRadius: 24, padding: "40px",
           border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
           marginBottom: 56
         }}>
-          {/* Left: High-res Food Image Showcase with Smooth Hover Scale */}
+          {/* Left: High-res Food Image with Interactive Layer Slice Highlights */}
           <div style={{ position: "relative", textAlign: "center" }}>
             <div style={{
-              position: "relative", width: "100%", maxWidth: 440, height: 350, margin: "0 auto",
-              borderRadius: 20, overflow: "hidden", boxShadow: "0 16px 36px rgba(78, 17, 25, 0.14)",
-              border: "1px solid var(--color-border-light)", background: "var(--color-cream-mid)"
+              position: "relative", width: "100%", maxWidth: 440, height: 380, margin: "0 auto",
+              borderRadius: 24, overflow: "hidden", boxShadow: "0 16px 36px rgba(78, 17, 25, 0.14)",
+              border: "1px solid var(--color-border-light)", background: "var(--color-cream-mid)",
+              display: "flex", alignItems: "center", justifyContent: "center"
             }}>
+              {/* Main Dish Photo */}
               <img
                 src={item.img}
                 alt={item.title}
                 style={{
                   width: "100%", height: "100%", objectFit: "cover",
-                  transform: activeLayerId ? "scale(1.05)" : "scale(1)",
-                  transition: "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                  transform: isIntroExploded
+                    ? "scale(1.08)"
+                    : selectedLayerId > 0
+                    ? "scale(1.05) translateY(-6px)"
+                    : "scale(1)",
+                  transition: "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  filter: isIntroExploded ? "brightness(0.92)" : "none"
                 }}
               />
-              
-              {/* Badge top left */}
+
+              {/* Badge Top Left */}
               <div style={{
                 position: "absolute", top: 16, left: 16, background: "var(--color-gold)",
                 color: "var(--color-primary-dark)", padding: "5px 14px", borderRadius: 999, fontSize: 12, fontWeight: 800,
-                display: "flex", alignItems: "center", gap: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
+                display: "flex", alignItems: "center", gap: 6, zIndex: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
               }}>
                 <Award size={14} /> {item.badge}
               </div>
 
-              {/* Price Tag bottom right */}
+              {/* Price Tag Bottom Right */}
               <div style={{
                 position: "absolute", bottom: 16, right: 16, background: "var(--color-primary-dark)",
                 color: "#fff", padding: "6px 16px", borderRadius: 12, fontSize: 18, fontWeight: 800,
-                boxShadow: "0 4px 14px rgba(0,0,0,0.2)"
+                zIndex: 10, boxShadow: "0 4px 14px rgba(0,0,0,0.2)"
               }}>
                 {item.price}
               </div>
 
-              {/* Dynamic Active Ingredient Overlay Tag */}
-              {currentLayer && (
+              {/* Initial Intro Exploded Floating Slices Layer */}
+              {isIntroExploded && (
+                <div style={{
+                  position: "absolute", inset: 0, background: "rgba(36,21,18,0.55)",
+                  backdropFilter: "blur(4px)", display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", gap: 10, zIndex: 8,
+                  padding: 20, transition: "opacity 0.5s ease"
+                }}>
+                  <div style={{
+                    color: "var(--color-gold)", fontSize: 12, fontWeight: 800, letterSpacing: 1.5,
+                    textTransform: "uppercase", marginBottom: 6, display: "flex", alignItems: "center", gap: 6
+                  }}>
+                    <Layers size={15} /> TỰ ĐỘNG BÓC TÁCH NGUYÊN LIỆU...
+                  </div>
+                  {item.layers.map((layer) => (
+                    <div
+                      key={layer.id}
+                      style={{
+                        background: `linear-gradient(135deg, ${layer.color} 0%, rgba(36,21,18,0.9) 100%)`,
+                        color: "#fff", padding: "8px 18px", borderRadius: 12, fontSize: 12.5, fontWeight: 700,
+                        width: "80%", textAlign: "center", border: "1px solid rgba(255,255,255,0.3)",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                        animation: `bounceIntro 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${layer.id * 0.1}s both`
+                      }}
+                    >
+                      {layer.id}. {layer.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Single Selected Ingredient Spotlight Badge */}
+              {!isIntroExploded && selectedLayer && (
                 <div style={{
                   position: "absolute", bottom: 16, left: 16,
-                  background: "rgba(36,21,18,0.85)", backdropFilter: "blur(6px)",
-                  color: "#fff", padding: "8px 14px", borderRadius: 12,
-                  display: "flex", alignItems: "center", gap: 8,
-                  border: "1px solid rgba(201,161,90,0.5)",
-                  animation: "fadeInUp 0.3s ease"
+                  background: "rgba(36,21,18,0.90)", backdropFilter: "blur(8px)",
+                  color: "#fff", padding: "10px 16px", borderRadius: 14,
+                  display: "flex", alignItems: "center", gap: 10, zIndex: 12,
+                  border: "2px solid var(--color-gold)",
+                  boxShadow: "0 8px 24px rgba(201,161,90,0.4)",
+                  animation: "bounceIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)"
                 }}>
                   <span style={{
-                    width: 22, height: 22, borderRadius: "50%", background: "var(--color-gold)",
-                    color: "#1F080C", fontSize: 11, fontWeight: 800,
+                    width: 24, height: 24, borderRadius: "50%", background: "var(--color-gold)",
+                    color: "#1F080C", fontSize: 12, fontWeight: 800,
                     display: "flex", alignItems: "center", justifyContent: "center"
                   }}>
-                    {currentLayer.id}
+                    {selectedLayer.id}
                   </span>
-                  <span style={{ fontSize: 12.5, fontWeight: 700 }}>
-                    {currentLayer.name}
-                  </span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--color-gold)" }}>
+                      NẨY NGUYÊN LIỆU: {selectedLayer.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>{selectedLayer.desc}</div>
+                  </div>
                 </div>
               )}
             </div>
+
+            <div style={{ fontSize: 11.5, color: "var(--color-muted)", marginTop: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+              <MousePointerClick size={14} color="var(--color-primary)" /> Bấm chọn nguyên liệu bên phải để xem nguyên liệu tương ứng nẩy lên
+            </div>
           </div>
 
-          {/* Right: Ingredient Layer List */}
+          {/* Right: Ingredient Layer List with Click & Hover Bounce Interactions */}
           <div>
             <span style={{ fontSize: 12, color: "var(--color-primary)", fontWeight: 800, letterSpacing: 2 }}>
               {item.tagline}
@@ -220,38 +299,39 @@ const FoodShowcaseSection = () => {
             {/* Layer List */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
               {item.layers.map((layer) => {
-                const isActive = activeLayerId === layer.id;
+                const isSelected = selectedLayerId === layer.id;
                 return (
                   <div
                     key={layer.id}
-                    onClick={() => setActiveLayerId(layer.id)}
-                    onMouseEnter={() => setActiveLayerId(layer.id)}
+                    onClick={() => setSelectedLayerId(isSelected ? 0 : layer.id)}
+                    onMouseEnter={() => setSelectedLayerId(layer.id)}
                     style={{
                       display: "flex", alignItems: "center", gap: 12,
                       padding: "12px 16px", borderRadius: 14,
-                      background: isActive ? "var(--color-gold-soft)" : "var(--color-bg)",
-                      border: isActive ? "2px solid var(--color-gold)" : "1px solid var(--color-border-light)",
-                      transform: isActive ? "translateX(6px)" : "none",
-                      transition: "all 0.2s ease",
+                      background: isSelected ? "var(--color-gold-soft)" : "var(--color-bg)",
+                      border: isSelected ? "2px solid var(--color-gold)" : "1px solid var(--color-border-light)",
+                      transform: isSelected ? "translateX(10px) scale(1.02)" : "none",
+                      boxShadow: isSelected ? "0 6px 18px rgba(201,161,90,0.3)" : "none",
+                      transition: "all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
                       cursor: "pointer"
                     }}
                   >
                     <div style={{
                       width: 28, height: 28, borderRadius: "50%",
-                      background: isActive ? "var(--color-primary)" : "var(--color-primary-pale)",
-                      color: isActive ? "#fff" : "var(--color-primary)",
+                      background: isSelected ? "var(--color-primary)" : "var(--color-primary-pale)",
+                      color: isSelected ? "#fff" : "var(--color-primary)",
                       fontWeight: 800, fontSize: 13, display: "flex",
                       alignItems: "center", justifyContent: "center", flexShrink: 0
                     }}>
                       {layer.id}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: isActive ? "var(--color-primary-dark)" : "var(--color-ink)" }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: isSelected ? "var(--color-primary-dark)" : "var(--color-ink)" }}>
                         {layer.name}
                       </div>
                       <div style={{ fontSize: 12, color: "var(--color-muted)" }}>{layer.desc}</div>
                     </div>
-                    <CheckCircle2 size={18} color={isActive ? "var(--color-primary)" : "var(--color-border)"} />
+                    <CheckCircle2 size={18} color={isSelected ? "var(--color-primary)" : "var(--color-border)"} />
                   </div>
                 );
               })}
@@ -320,6 +400,17 @@ const FoodShowcaseSection = () => {
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes bounceIntro {
+          0% { transform: translateY(-20px) scale(0.9); opacity: 0; }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes bounceIn {
+          0% { transform: scale(0.85) translateY(10px); opacity: 0; }
+          100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+      `}</style>
     </section>
   );
 };
