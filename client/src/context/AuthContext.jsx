@@ -26,7 +26,7 @@ const SessionExpiredModal = ({ onConfirm }) => (
         Phiên đăng nhập đã hết
       </h3>
       <p style={{ fontSize: 13.5, color: "var(--color-muted)", lineHeight: 1.5, marginBottom: 24 }}>
-        Phiên đăng nhập của bạn đã hết hạn (quá 20 phút). Vui lòng đăng nhập lại để tiếp tục sử dụng hệ thống FoodGo.
+        Phiên đăng nhập đã hết hạn do không có tương tác trong 20 phút. Vui lòng đăng nhập lại để tiếp tục sử dụng hệ thống FoodGo.
       </p>
       <button
         onClick={onConfirm}
@@ -54,36 +54,56 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Kiểm tra thời gian đăng nhập quá 30 phút (30 * 60 * 1000 = 1.800.000 ms)
+  // Kiểm tra thời gian KHÔNG tương tác (Inactivity) quá 20 phút (20 * 60 * 1000 = 1.200.000 ms)
   useEffect(() => {
     if (!user) return;
 
+    // Cập nhật thời gian hoạt động gần nhất
+    const updateActivity = () => {
+      const now = Date.now();
+      const lastActivity = localStorage.getItem("lastActivityTime");
+      // Cập nhật tối đa 1 lần mỗi 5 giây để tránh spam localStorage
+      if (!lastActivity || now - Number(lastActivity) > 5000) {
+        localStorage.setItem("lastActivityTime", now.toString());
+      }
+    };
+
+    // Đánh dấu hoạt động ban đầu
+    updateActivity();
+
+    // Lắng nghe các thao tác của người dùng trên ứng dụng
+    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
+    events.forEach((evt) => window.addEventListener(evt, updateActivity, { passive: true }));
+
     const checkTimeout = () => {
-      const loginTime = localStorage.getItem("loginTime");
-      if (loginTime) {
-        const elapsed = Date.now() - Number(loginTime);
-        if (elapsed >= 20 * 60 * 1000) {
+      const lastActivity = localStorage.getItem("lastActivityTime") || localStorage.getItem("loginTime");
+      if (lastActivity) {
+        const inactiveTime = Date.now() - Number(lastActivity);
+        if (inactiveTime >= 20 * 60 * 1000) {
           setShowSessionExpiredModal(true);
         }
       }
     };
 
     checkTimeout();
-    const interval = setInterval(checkTimeout, 5000); // Kiểm tra mỗi 5s
+    const interval = setInterval(checkTimeout, 5000); // Kiểm tra mỗi 5 giây
 
     const handleExpiredEvent = () => setShowSessionExpiredModal(true);
     window.addEventListener("session-expired", handleExpiredEvent);
 
     return () => {
       clearInterval(interval);
+      events.forEach((evt) => window.removeEventListener(evt, updateActivity));
       window.removeEventListener("session-expired", handleExpiredEvent);
     };
   }, [user]);
 
   const saveAuthSession = (user, token) => {
+    const now = Date.now().toString();
     localStorage.setItem("token", token);
     localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("loginTime", Date.now().toString());
+    localStorage.setItem("loginTime", now);
+    localStorage.setItem("lastActivityTime", now);
     setUser(user);
     setShowSessionExpiredModal(false);
   };
@@ -113,6 +133,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("loginTime");
+    localStorage.removeItem("lastActivityTime");
     setUser(null);
     setShowSessionExpiredModal(false);
   };
