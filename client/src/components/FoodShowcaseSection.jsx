@@ -156,7 +156,7 @@ const FoodShowcaseSection = () => {
 
               {/* Stack of 5 Isolated Cutout PNG Ingredient Images */}
               <div style={{
-                position: "relative", width: 280, height: 380,
+                position: "relative", width: 260, height: 360,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"
               }}>
                 {item.layers.map((layer, idx) => {
@@ -165,28 +165,28 @@ const FoodShowcaseSection = () => {
                   const isHoveredOrSelected = selectedIdx !== -1;
 
                   // 1. Initial 2.5s Intro: start exploded in mid-air, then smoothly collapse into complete burger!
-                  // Assembled compact top positions (tight complete burger): idx * 36 + 60
-                  // Exploded intro top positions (mid-air spread): idx * 62 + 20
-                  let baseTop = isIntroExploded ? (idx * 62 + 20) : (idx * 36 + 60);
+                  // Assembled compact top positions (tight complete burger): idx * 28 + 80
+                  // Exploded intro top positions (mid-air spread): idx * 52 + 30
+                  let baseTop = isIntroExploded ? (idx * 52 + 30) : (idx * 28 + 80);
 
                   let translateY = 0;
                   let translateX = 0;
 
                   // 2. When an ingredient is selected/hovered:
-                  // Open a generous 72px gap (upper layers -36px, lower layers +36px)
+                  // Open a clean focus gap (upper layers -24px, lower layers +24px)
                   // so the selected ingredient NEVER covers adjacent layers!
                   if (isHoveredOrSelected) {
                     if (idx < selectedIdx) {
-                      translateY = -36; // Upper layers shift UP away from selected item
+                      translateY = -24; // Upper layers shift UP away from selected item
                     } else if (idx > selectedIdx) {
-                      translateY = 36;  // Lower layers shift DOWN away from selected item
+                      translateY = 24;  // Lower layers shift DOWN away from selected item
                     } else {
-                      translateX = 28;  // Selected ingredient slides out RIGHT into clean spotlight space
+                      translateX = 22;  // Selected ingredient slides out RIGHT into clean spotlight space
                       translateY = 0;
                     }
                   }
 
-                  const scale = isSelected ? 1.08 : isIntroExploded ? 1.03 : 1;
+                  const scale = isSelected ? 1.06 : isIntroExploded ? 1.02 : 1;
                   const zIndex = isSelected ? 30 : 10 - idx;
 
                   return (
@@ -197,13 +197,13 @@ const FoodShowcaseSection = () => {
                       style={{
                         position: "absolute",
                         top: baseTop,
-                        width: 240,
+                        width: 175,
                         transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
                         transition: "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
                         cursor: "pointer",
                         zIndex: zIndex,
                         filter: isSelected
-                          ? "drop-shadow(0 10px 24px rgba(201,161,90,0.95)) brightness(1.1)"
+                          ? "drop-shadow(0 8px 20px rgba(201,161,90,0.95)) brightness(1.08)"
                           : isIntroExploded
                           ? "drop-shadow(0 4px 10px rgba(0,0,0,0.12))"
                           : "drop-shadow(0 2px 4px rgba(0,0,0,0.06))"
