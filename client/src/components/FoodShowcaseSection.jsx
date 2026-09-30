@@ -266,65 +266,6 @@ const FoodShowcaseSection = () => {
             </button>
           </div>
         </div>
-
-        {/* Featured Food Cards Section — Real Shops from Backend */}
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
-            <div>
-              <h3 style={{ fontSize: 22, fontWeight: 800, color: "var(--color-ink)", fontFamily: "var(--font-display)" }}>
-                Quán Ăn Nổi Bật & Combo Thực Tế
-              </h3>
-              <p className="text-muted" style={{ fontSize: 13.5 }}>Các quán ăn đang được ưa chuộng nhất tuần này</p>
-            </div>
-            <a href="#shops-section" style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-primary)", display: "inline-flex", alignItems: "center", gap: 4 }}>
-              Xem tất cả <ArrowRight size={14} />
-            </a>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 20 }}>
-            {featuredCards.map((card) => (
-              <div
-                key={card.id}
-                onClick={() => handleOpenShopMenu(card.shopId)}
-                className="card card-hoverable"
-                style={{ overflow: "hidden", display: "flex", flexDirection: "column", cursor: "pointer" }}
-              >
-                <div style={{ position: "relative", height: 160, width: "100%", background: "var(--color-cream-mid)" }}>
-                  <img src={card.img} alt={card.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  <span style={{
-                    position: "absolute", top: 10, left: 10, background: "rgba(36,21,18,0.85)",
-                    color: "#fff", padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                    maxWidth: "80%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
-                  }}>
-                    {card.tagline}
-                  </span>
-                  <span className="badge badge-rating" style={{ position: "absolute", top: 10, right: 10 }}>
-                    <Star size={11} fill="currentColor" /> {card.rating}
-                  </span>
-                </div>
-
-                <div style={{ padding: 16, flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                  <div>
-                    <h4 style={{ fontSize: 15, fontWeight: 700, color: "var(--color-ink)", marginBottom: 4, fontFamily: "var(--font-display)" }}>
-                      {card.name}
-                    </h4>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-primary)" }}>
-                      {card.price}
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleOpenShopMenu(card.shopId); }}
-                    className="btn btn-outline btn-sm"
-                    style={{ marginTop: 14, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, cursor: "pointer" }}
-                  >
-                    <ShoppingBag size={14} /> Xem Thực Đơn Quán
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </section>
   );
