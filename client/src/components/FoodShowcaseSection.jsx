@@ -146,10 +146,10 @@ const FoodShowcaseSection = () => {
                     display: "block",
                     objectFit: "contain",
                     filter: selectedLayerId > 0
-                      ? "drop-shadow(0 14px 28px rgba(201,161,90,0.85)) brightness(1.05)"
+                      ? "drop-shadow(0 0 24px rgba(201,161,90,0.95)) brightness(1.12)"
                       : "drop-shadow(0 10px 22px rgba(0,0,0,0.16))",
-                    transform: selectedLayerId > 0 ? "scale(1.04) translateY(-6px)" : "none",
-                    transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                    transform: "none",
+                    transition: "all 0.35s ease"
                   }}
                 />
               </div>
@@ -159,7 +159,7 @@ const FoodShowcaseSection = () => {
                 fontSize: 11.5, color: "var(--color-muted)", marginTop: 12,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6
               }}>
-                <MousePointerClick size={14} color="var(--color-primary)" /> Chiếc All-Star Burger nguyên bản hoàn chỉnh 100%
+                <MousePointerClick size={14} color="var(--color-primary)" /> Bấm chọn từng nguyên liệu để xem hiệu ứng phát sáng
               </div>
             </div>
           </div>
@@ -190,9 +190,10 @@ const FoodShowcaseSection = () => {
                       padding: "12px 16px", borderRadius: 14,
                       background: isSelected ? "var(--color-gold-soft)" : "var(--color-bg)",
                       border: isSelected ? "2px solid var(--color-gold)" : "1px solid var(--color-border-light)",
-                      transform: isSelected ? "translateX(8px)" : "none",
-                      boxShadow: isSelected ? "0 4px 14px rgba(201,161,90,0.25)" : "none",
-                      transition: "all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                      transform: "none",
+                      boxShadow: isSelected ? "0 4px 18px rgba(201,161,90,0.35)" : "none",
+                      filter: isSelected ? "brightness(1.04)" : "none",
+                      transition: "all 0.25s ease",
                       cursor: "pointer"
                     }}
                   >
