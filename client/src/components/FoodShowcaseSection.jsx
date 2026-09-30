@@ -64,11 +64,29 @@ const DEFAULT_REAL_FOOD_CARDS = [
 const FoodShowcaseSection = () => {
   const [selectedLayerId, setSelectedLayerId] = useState(0); // 0 = none selected
   const [targetShopId, setTargetShopId] = useState("6ab55af366c83c440a071a2f");
-  const [featuredCards, setFeaturedCards] = useState(DEFAULT_REAL_FOOD_CARDS);
+  const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef(null);
   const navigate = useNavigate();
 
   const item = BURGER_SHOWCASE;
+
+  // Scroll reveal observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.15 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   // Fetch real shops on mount to match real shop IDs and images from backend
   useEffect(() => {
@@ -76,23 +94,10 @@ const FoodShowcaseSection = () => {
       .then((data) => {
         const shopsList = data.shops || [];
         if (shopsList.length > 0) {
-          // Find a shop selling burger or use first available shop
           const burgerShop = shopsList.find((s) =>
             (s.name || "").toLowerCase().includes("burger")
           ) || shopsList[0];
           setTargetShopId(burgerShop._id);
-
-          // Map real shops into featured food cards
-          const realCards = shopsList.slice(0, 4).map((shop, idx) => ({
-            id: shop._id,
-            shopId: shop._id,
-            name: shop.name,
-            tagline: shop.address || "Quán Ăn Nổi Bật",
-            price: shop.city || "Thực Đơn Đa Dạng",
-            rating: shop.rating || 4.9,
-            img: shop.cover_url || DEFAULT_REAL_FOOD_CARDS[idx % DEFAULT_REAL_FOOD_CARDS.length].img
-          }));
-          setFeaturedCards(realCards);
         }
       })
       .catch(() => {});
@@ -119,11 +124,17 @@ const FoodShowcaseSection = () => {
         scrollMarginTop: "90px",
         borderTop: "1px solid var(--color-border-light)",
         borderBottom: "1px solid var(--color-border-light)",
+        overflow: "hidden"
       }}
     >
       <div className="container">
-        {/* Header Title — Clean without extra explanations */}
-        <div style={{ textAlign: "center", maxWidth: 680, margin: "0 auto 36px" }}>
+        {/* Header Title — Smooth Scroll Fade-In */}
+        <div style={{
+          textAlign: "center", maxWidth: 680, margin: "0 auto 36px",
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible ? "translateY(0)" : "translateY(32px)",
+          transition: "opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1)"
+        }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "5px 16px", borderRadius: 999, background: "var(--color-gold-soft)",
@@ -140,15 +151,22 @@ const FoodShowcaseSection = () => {
           </p>
         </div>
 
-        {/* Showcase Card — Full Un-cut Burger PNG Image */}
+        {/* Showcase Card — Smooth Scroll Slide & Fade-In */}
         <div style={{
           display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "center",
           background: "var(--color-white)", borderRadius: 24, padding: "40px",
           border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
-          marginBottom: 56
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible ? "translateY(0)" : "translateY(40px)",
+          transition: "opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1) 0.15s, transform 0.95s cubic-bezier(0.16, 1, 0.3, 1) 0.15s"
         }}>
           {/* Left: Full Original Un-cut Burger PNG Image */}
-          <div style={{ position: "relative", textAlign: "center" }}>
+          <div style={{
+            position: "relative", textAlign: "center",
+            opacity: isVisible ? 1 : 0,
+            transform: isVisible ? "translateX(0)" : "translateX(-32px)",
+            transition: "opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.25s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.25s"
+          }}>
             <div style={{
               position: "relative", width: "100%", maxWidth: 440, minHeight: 400, margin: "0 auto",
               borderRadius: 24, padding: "32px 20px", background: "var(--color-cream-mid)",
@@ -204,7 +222,11 @@ const FoodShowcaseSection = () => {
           </div>
 
           {/* Right: Ingredient Layer List */}
-          <div>
+          <div style={{
+            opacity: isVisible ? 1 : 0,
+            transform: isVisible ? "translateX(0)" : "translateX(32px)",
+            transition: "opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s"
+          }}>
             <span style={{ fontSize: 12, color: "var(--color-primary)", fontWeight: 800, letterSpacing: 2 }}>
               {item.tagline}
             </span>
@@ -215,9 +237,9 @@ const FoodShowcaseSection = () => {
               {item.subtitle}
             </p>
 
-            {/* Layer List */}
+            {/* Layer List with Staggered Fade-In */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
-              {item.layers.map((layer) => {
+              {item.layers.map((layer, idx) => {
                 const isSelected = selectedLayerId === layer.id;
                 return (
                   <div
@@ -229,10 +251,11 @@ const FoodShowcaseSection = () => {
                       padding: "12px 16px", borderRadius: 14,
                       background: isSelected ? "var(--color-gold-soft)" : "var(--color-bg)",
                       border: isSelected ? "2px solid var(--color-gold)" : "1px solid var(--color-border-light)",
-                      transform: "none",
+                      transform: isVisible ? "translateY(0)" : "translateY(16px)",
+                      opacity: isVisible ? 1 : 0,
                       boxShadow: isSelected ? "0 4px 18px rgba(201,161,90,0.35)" : "none",
                       filter: isSelected ? "brightness(1.04)" : "none",
-                      transition: "all 0.25s ease",
+                      transition: `opacity 0.6s ease ${0.4 + idx * 0.08}s, transform 0.6s ease ${0.4 + idx * 0.08}s, background 0.25s ease, border 0.25s ease, box-shadow 0.25s ease`,
                       cursor: "pointer"
                     }}
                   >
