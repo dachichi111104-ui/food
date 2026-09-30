@@ -63,11 +63,13 @@ const FoodShowcaseSection = () => {
 
   return (
     <section
+      id="showcase-section"
       ref={sectionRef}
       style={{
         background: "linear-gradient(180deg, var(--color-bg) 0%, #F5EDE0 100%)",
         color: "var(--color-ink)",
-        padding: "56px 0 64px",
+        padding: "88px 0 72px",
+        scrollMarginTop: "90px",
         borderTop: "1px solid var(--color-border-light)",
         borderBottom: "1px solid var(--color-border-light)",
       }}
