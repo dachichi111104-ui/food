@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, ShoppingBag, CheckCircle2, ChevronRight, Star, Utensils, Award, ArrowRight, MousePointerClick } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Sparkles, ShoppingBag, CheckCircle2, ChevronRight, Star, Utensils, Award, ArrowRight } from "lucide-react";
+import { listShops } from "../services/shop.service";
 
 /* Import Full Burger PNG Image (original un-cut high-res burger) */
 import fullBurgerImg from "../assets/burger.png";
@@ -57,9 +59,37 @@ const FEATURED_FOOD_CARDS = [
 
 const FoodShowcaseSection = () => {
   const [selectedLayerId, setSelectedLayerId] = useState(0); // 0 = none selected
+  const [targetShopId, setTargetShopId] = useState(null);
   const sectionRef = useRef(null);
+  const navigate = useNavigate();
 
   const item = BURGER_SHOWCASE;
+
+  // Fetch shops on mount to find the target shop ID for direct navigation
+  useEffect(() => {
+    listShops()
+      .then((data) => {
+        const shopsList = data.shops || [];
+        if (shopsList.length > 0) {
+          // Find a shop selling burger or use first available shop
+          const burgerShop = shopsList.find((s) =>
+            (s.name || "").toLowerCase().includes("burger")
+          ) || shopsList[0];
+          setTargetShopId(burgerShop._id);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleOpenShopMenu = (e) => {
+    e.preventDefault();
+    if (targetShopId) {
+      navigate(`/shops/${targetShopId}`);
+    } else {
+      const el = document.getElementById("shops-section");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <section
@@ -103,7 +133,7 @@ const FoodShowcaseSection = () => {
           {/* Left: Full Original Un-cut Burger PNG Image */}
           <div style={{ position: "relative", textAlign: "center" }}>
             <div style={{
-              position: "relative", width: "100%", maxWidth: 440, minHeight: 420, margin: "0 auto",
+              position: "relative", width: "100%", maxWidth: 440, minHeight: 400, margin: "0 auto",
               borderRadius: 24, padding: "32px 20px", background: "var(--color-cream-mid)",
               border: "1px solid var(--color-border-light)", display: "flex",
               flexDirection: "column", alignItems: "center", justifyContent: "center"
@@ -152,14 +182,6 @@ const FoodShowcaseSection = () => {
                     transition: "all 0.35s ease"
                   }}
                 />
-              </div>
-
-              {/* Status Banner */}
-              <div style={{
-                fontSize: 11.5, color: "var(--color-muted)", marginTop: 12,
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6
-              }}>
-                <MousePointerClick size={14} color="var(--color-primary)" /> Bấm chọn từng nguyên liệu để xem hiệu ứng phát sáng
               </div>
             </div>
           </div>
@@ -218,13 +240,13 @@ const FoodShowcaseSection = () => {
               })}
             </div>
 
-            <a
-              href="#shops-section"
+            <button
+              onClick={handleOpenShopMenu}
               className="btn btn-primary btn-lg"
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14.5, borderRadius: "var(--radius-sm)" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14.5, borderRadius: "var(--radius-sm)", border: "none", cursor: "pointer" }}
             >
               <ShoppingBag size={18} /> Đặt Món Ngay <ChevronRight size={16} />
-            </a>
+            </button>
           </div>
         </div>
 
@@ -268,13 +290,13 @@ const FoodShowcaseSection = () => {
                     </div>
                   </div>
 
-                  <a
-                    href="#shops-section"
+                  <button
+                    onClick={handleOpenShopMenu}
                     className="btn btn-outline btn-sm"
-                    style={{ marginTop: 14, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5 }}
+                    style={{ marginTop: 14, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, cursor: "pointer" }}
                   >
                     <ShoppingBag size={14} /> Xem Thực Đơn Quán
-                  </a>
+                  </button>
                 </div>
               </div>
             ))}
