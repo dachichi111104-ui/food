@@ -22,50 +22,55 @@ const BURGER_SHOWCASE = {
   ]
 };
 
-const FEATURED_FOOD_CARDS = [
+const DEFAULT_REAL_FOOD_CARDS = [
   {
     id: "f1",
-    name: "FREE THROW BURGER",
-    tagline: "Combo Đầy Đủ",
-    price: "69.000đ",
+    shopId: "6ab55af366c83c440a071a2f",
+    name: "Burger & Co. Thủ Công",
+    tagline: "Combo Bò Nướng 2 Lớp",
+    price: "79.000đ",
     rating: 4.9,
-    img: "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=500&q=80",
-  },
-  {
-    id: "f2",
-    name: "LAYUP BURGER COMBO",
-    tagline: "Khuyến Mãi Hot",
-    price: "85.000đ",
-    rating: 5.0,
-    img: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=500&q=80",
-  },
-  {
-    id: "f3",
-    name: "HOOK SHOT BURGER",
-    tagline: "Món Nổi Bật",
-    price: "75.000đ",
-    rating: 4.8,
     img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80",
   },
   {
+    id: "f2",
+    shopId: "6ab55af266c83c440a0719fb",
+    name: "Cơm Tấm Sài Gòn Ba Đình",
+    tagline: "Sườn Bì Chả Đặc Biệt",
+    price: "55.000đ",
+    rating: 4.8,
+    img: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=500&q=80",
+  },
+  {
+    id: "f3",
+    shopId: "6ab55af466c83c440a071a4f",
+    name: "Gà Nướng Honey & BBQ",
+    tagline: "Gà Sốt Mật Ong Giòn",
+    price: "89.000đ",
+    rating: 5.0,
+    img: "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=500&q=80",
+  },
+  {
     id: "f4",
-    name: "PHỞ BÒ ĐẶC BIỆT",
-    tagline: "Nước Dùng Đậm Đà",
+    shopId: "6ab55af366c83c440a071a13",
+    name: "Phở Hà Nội Gốc Gia Truyền",
+    tagline: "Nước Dùng Đậm Đà 24h",
     price: "60.000đ",
     rating: 4.9,
-    img: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=500&q=80",
+    img: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&w=500&q=80",
   },
 ];
 
 const FoodShowcaseSection = () => {
   const [selectedLayerId, setSelectedLayerId] = useState(0); // 0 = none selected
-  const [targetShopId, setTargetShopId] = useState(null);
+  const [targetShopId, setTargetShopId] = useState("6ab55af366c83c440a071a2f");
+  const [featuredCards, setFeaturedCards] = useState(DEFAULT_REAL_FOOD_CARDS);
   const sectionRef = useRef(null);
   const navigate = useNavigate();
 
   const item = BURGER_SHOWCASE;
 
-  // Fetch shops on mount to find the target shop ID for direct navigation
+  // Fetch real shops on mount to match real shop IDs and images from backend
   useEffect(() => {
     listShops()
       .then((data) => {
@@ -76,15 +81,27 @@ const FoodShowcaseSection = () => {
             (s.name || "").toLowerCase().includes("burger")
           ) || shopsList[0];
           setTargetShopId(burgerShop._id);
+
+          // Map real shops into featured food cards
+          const realCards = shopsList.slice(0, 4).map((shop, idx) => ({
+            id: shop._id,
+            shopId: shop._id,
+            name: shop.name,
+            tagline: shop.address || "Quán Ăn Nổi Bật",
+            price: shop.city || "Thực Đơn Đa Dạng",
+            rating: shop.rating || 4.9,
+            img: shop.cover_url || DEFAULT_REAL_FOOD_CARDS[idx % DEFAULT_REAL_FOOD_CARDS.length].img
+          }));
+          setFeaturedCards(realCards);
         }
       })
       .catch(() => {});
   }, []);
 
-  const handleOpenShopMenu = (e) => {
-    e.preventDefault();
-    if (targetShopId) {
-      navigate(`/shops/${targetShopId}`);
+  const handleOpenShopMenu = (shopId) => {
+    const idToOpen = shopId || targetShopId;
+    if (idToOpen) {
+      navigate(`/shops/${idToOpen}`);
     } else {
       const el = document.getElementById("shops-section");
       if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -241,7 +258,7 @@ const FoodShowcaseSection = () => {
             </div>
 
             <button
-              onClick={handleOpenShopMenu}
+              onClick={() => handleOpenShopMenu(targetShopId)}
               className="btn btn-primary btn-lg"
               style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14.5, borderRadius: "var(--radius-sm)", border: "none", cursor: "pointer" }}
             >
@@ -250,14 +267,14 @@ const FoodShowcaseSection = () => {
           </div>
         </div>
 
-        {/* Featured Food Cards Section */}
+        {/* Featured Food Cards Section — Real Shops from Backend */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
             <div>
               <h3 style={{ fontSize: 22, fontWeight: 800, color: "var(--color-ink)", fontFamily: "var(--font-display)" }}>
-                Món Ăn Nổi Bật & Combo Khuyến Mãi
+                Quán Ăn Nổi Bật & Combo Thực Tế
               </h3>
-              <p className="text-muted" style={{ fontSize: 13.5 }}>Các món ăn đang được ưa chuộng nhất tuần này</p>
+              <p className="text-muted" style={{ fontSize: 13.5 }}>Các quán ăn đang được ưa chuộng nhất tuần này</p>
             </div>
             <a href="#shops-section" style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-primary)", display: "inline-flex", alignItems: "center", gap: 4 }}>
               Xem tất cả <ArrowRight size={14} />
@@ -265,13 +282,19 @@ const FoodShowcaseSection = () => {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 20 }}>
-            {FEATURED_FOOD_CARDS.map((card) => (
-              <div key={card.id} className="card card-hoverable" style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            {featuredCards.map((card) => (
+              <div
+                key={card.id}
+                onClick={() => handleOpenShopMenu(card.shopId)}
+                className="card card-hoverable"
+                style={{ overflow: "hidden", display: "flex", flexDirection: "column", cursor: "pointer" }}
+              >
                 <div style={{ position: "relative", height: 160, width: "100%", background: "var(--color-cream-mid)" }}>
                   <img src={card.img} alt={card.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <span style={{
-                    position: "absolute", top: 10, left: 10, background: "rgba(36,21,18,0.8)",
-                    color: "#fff", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700
+                    position: "absolute", top: 10, left: 10, background: "rgba(36,21,18,0.85)",
+                    color: "#fff", padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                    maxWidth: "80%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
                   }}>
                     {card.tagline}
                   </span>
@@ -285,13 +308,13 @@ const FoodShowcaseSection = () => {
                     <h4 style={{ fontSize: 15, fontWeight: 700, color: "var(--color-ink)", marginBottom: 4, fontFamily: "var(--font-display)" }}>
                       {card.name}
                     </h4>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: "var(--color-primary)" }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-primary)" }}>
                       {card.price}
                     </div>
                   </div>
 
                   <button
-                    onClick={handleOpenShopMenu}
+                    onClick={(e) => { e.stopPropagation(); handleOpenShopMenu(card.shopId); }}
                     className="btn btn-outline btn-sm"
                     style={{ marginTop: 14, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, cursor: "pointer" }}
                   >
