@@ -131,7 +131,7 @@ const FoodShowcaseSection = () => {
           {/* Left: 5 Cutout PNG Layer Images from burger.png */}
           <div style={{ position: "relative", textAlign: "center" }}>
             <div style={{
-              position: "relative", width: "100%", maxWidth: 440, height: 420, margin: "0 auto",
+              position: "relative", width: "100%", maxWidth: 440, height: 460, margin: "0 auto",
               borderRadius: 24, padding: 20, background: "var(--color-cream-mid)",
               border: "1px solid var(--color-border-light)", display: "flex",
               flexDirection: "column", alignItems: "center", justifyContent: "center"
@@ -156,32 +156,31 @@ const FoodShowcaseSection = () => {
 
               {/* Stack of 5 Isolated Cutout PNG Ingredient Images */}
               <div style={{
-                position: "relative", width: 280, height: 350,
+                position: "relative", width: 280, height: 380,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"
               }}>
                 {item.layers.map((layer, idx) => {
                   const isSelected = selectedLayerId === layer.id;
                   const selectedIdx = item.layers.findIndex(l => l.id === selectedLayerId);
+                  const isHoveredOrSelected = selectedIdx !== -1;
 
-                  // Base vertical spacing: 48px apart so layers are clearly separated and don't stick together
+                  // Base vertical spacing:
+                  // 1. Initial 2.5s Intro OR when selected: Explode with 65px air gap so every layer is separated cleanly!
+                  // 2. Normal assembled state: 42px spacing for natural burger shape
+                  const isExplodedState = isIntroExploded || isHoveredOrSelected;
+
+                  let baseTop = isExplodedState ? (idx * 65 + 20) : (idx * 42 + 45);
                   let translateY = 0;
                   let translateX = 0;
 
-                  // 1. Initial 2.5s Intro Exploded Offset (Spread layers further apart)
-                  if (isIntroExploded) {
-                    translateY = (idx - 2) * 32; // -64px, -32px, 0, +32px, +64px
-                  } 
-                  // 2. Smart Accordion Gap when a layer is selected:
-                  // Open up space above & below the selected ingredient so it NEVER covers adjacent layers!
-                  else if (selectedIdx !== -1) {
+                  if (isHoveredOrSelected) {
                     if (idx < selectedIdx) {
-                      translateY = -24; // Move upper layers UP
+                      translateY = -18; // Shift upper layers UP to open gap
                     } else if (idx > selectedIdx) {
-                      translateY = 24;  // Move lower layers DOWN
+                      translateY = 18;  // Shift lower layers DOWN to open gap
                     } else {
-                      // Selected layer itself: pop right + floating glow
-                      translateY = -4;
-                      translateX = 18;
+                      translateX = 22;  // Pop selected layer out RIGHT
+                      translateY = -2;
                     }
                   }
 
@@ -195,17 +194,17 @@ const FoodShowcaseSection = () => {
                       onMouseEnter={() => setSelectedLayerId(layer.id)}
                       style={{
                         position: "absolute",
-                        top: idx * 48 + 15,
-                        width: 250,
+                        top: baseTop,
+                        width: 240,
                         transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
-                        transition: "transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease",
+                        transition: "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
                         cursor: "pointer",
                         zIndex: zIndex,
                         filter: isSelected
-                          ? "drop-shadow(0 8px 20px rgba(201,161,90,0.9)) brightness(1.1)"
-                          : isIntroExploded
-                          ? "drop-shadow(0 4px 10px rgba(0,0,0,0.15))"
-                          : "drop-shadow(0 2px 5px rgba(0,0,0,0.08))"
+                          ? "drop-shadow(0 10px 24px rgba(201,161,90,0.95)) brightness(1.1)"
+                          : isExplodedState
+                          ? "drop-shadow(0 4px 10px rgba(0,0,0,0.12))"
+                          : "drop-shadow(0 2px 4px rgba(0,0,0,0.06))"
                       }}
                     >
                       {/* Transparent PNG Ingredient Layer Image */}
@@ -225,8 +224,8 @@ const FoodShowcaseSection = () => {
                       {isSelected && (
                         <div style={{
                           position: "absolute",
-                          top: -8,
-                          right: -12,
+                          top: -6,
+                          right: -10,
                           background: "var(--color-primary-dark)",
                           color: "#fff",
                           padding: "3px 10px",
