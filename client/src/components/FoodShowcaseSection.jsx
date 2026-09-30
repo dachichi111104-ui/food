@@ -1,12 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Sparkles, ShoppingBag, CheckCircle2, ChevronRight, Star, Utensils, Award, ArrowRight, MousePointerClick } from "lucide-react";
 
-/* Import Burger PNG Layer Cutouts (created directly from burger.png / media_1790710681463.png) */
-import b1 from "../assets/burger/layer1_top_bun.png";
-import b2 from "../assets/burger/layer2_bacon.png";
-import b3 from "../assets/burger/layer3_tomatoes.png";
-import b4 from "../assets/burger/layer4_patty.png";
-import b5 from "../assets/burger/layer5_bottom.png";
+/* Import Full Burger PNG Image (original un-cut high-res burger) */
+import fullBurgerImg from "../assets/burger.png";
 
 const BURGER_SHOWCASE = {
   id: "burger",
@@ -16,11 +12,11 @@ const BURGER_SHOWCASE = {
   price: "79.000đ",
   badge: "Món Bán Chạy #1",
   layers: [
-    { id: 1, name: "Vỏ Bánh Mì Nướng Bơ Tỏi", desc: "Giòn thơm, thơm béo vị bơ nguyên chất", img: b1 },
-    { id: 2, name: "Thịt Xông Khói Giòn Rụm", desc: "Bacon nướng giòn thơm béo ngậy", img: b2 },
-    { id: 3, name: "Cà Chua Tươi Tươi Sạch", desc: "Nông sản Đà Lạt tươi sạch trong ngày", img: b3 },
-    { id: 4, name: "Thịt Bò Nướng Than Hồng", desc: "Thịt bò Úc nhập khẩu 100% mềm ngọt", img: b4 },
-    { id: 5, name: "Rau Xà Lách & Đế Bánh", desc: "Giữ độ nóng hổi và hương vị vẹn toàn", img: b5 },
+    { id: 1, name: "Vỏ Bánh Mì Nướng Bơ Tỏi", desc: "Giòn thơm, thơm béo vị bơ nguyên chất" },
+    { id: 2, name: "Thịt Xông Khói Giòn Rụm", desc: "Bacon nướng giòn thơm béo ngậy" },
+    { id: 3, name: "Cà Chua Tươi Tươi Sạch", desc: "Nông sản Đà Lạt tươi sạch trong ngày" },
+    { id: 4, name: "Thịt Bò Nướng Than Hồng", desc: "Thịt bò Úc nhập khẩu 100% mềm ngọt" },
+    { id: 5, name: "Rau Xà Lách & Đế Bánh", desc: "Giữ độ nóng hổi và hương vị vẹn toàn" },
   ]
 };
 
@@ -61,35 +57,9 @@ const FEATURED_FOOD_CARDS = [
 
 const FoodShowcaseSection = () => {
   const [selectedLayerId, setSelectedLayerId] = useState(0); // 0 = none selected
-  const [isIntroExploded, setIsIntroExploded] = useState(true); // 2.5s intro explode state
   const sectionRef = useRef(null);
 
   const item = BURGER_SHOWCASE;
-
-  // Initial 2.5s explode intro on load / mount
-  useEffect(() => {
-    setIsIntroExploded(true);
-    setSelectedLayerId(0);
-    const timer = setTimeout(() => {
-      setIsIntroExploded(false);
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Trigger 2.5s intro explode when scrolling section into view
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setIsIntroExploded(true);
-          setTimeout(() => setIsIntroExploded(false), 2500);
-        }
-      },
-      { threshold: 0.3 }
-    );
-    if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <section
@@ -121,18 +91,18 @@ const FoodShowcaseSection = () => {
           </p>
         </div>
 
-        {/* Showcase Card — 5 Cutout PNG Layers Display */}
+        {/* Showcase Card — Full Un-cut Burger PNG Image */}
         <div style={{
           display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40, alignItems: "center",
           background: "var(--color-white)", borderRadius: 24, padding: "40px",
           border: "1px solid var(--color-border)", boxShadow: "var(--shadow-card)",
           marginBottom: 56
         }}>
-          {/* Left: 5 Cutout PNG Layer Images from burger.png */}
+          {/* Left: Full Original Un-cut Burger PNG Image */}
           <div style={{ position: "relative", textAlign: "center" }}>
             <div style={{
-              position: "relative", width: "100%", maxWidth: 440, height: 460, margin: "0 auto",
-              borderRadius: 24, padding: 20, background: "var(--color-cream-mid)",
+              position: "relative", width: "100%", maxWidth: 440, minHeight: 420, margin: "0 auto",
+              borderRadius: 24, padding: "32px 20px", background: "var(--color-cream-mid)",
               border: "1px solid var(--color-border-light)", display: "flex",
               flexDirection: "column", alignItems: "center", justifyContent: "center"
             }}>
@@ -154,105 +124,40 @@ const FoodShowcaseSection = () => {
                 {item.price}
               </div>
 
-              {/* Stack of 5 Isolated Cutout PNG Ingredient Images */}
+              {/* Full Original Burger Image */}
               <div style={{
-                position: "relative", width: 260, height: 360,
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"
+                position: "relative",
+                width: "100%",
+                maxWidth: 290,
+                margin: "12px 0",
+                display: "flex",
+                alignItems: "center",
+                justify: "center"
               }}>
-                {item.layers.map((layer, idx) => {
-                  const isSelected = selectedLayerId === layer.id;
-                  const selectedIdx = item.layers.findIndex(l => l.id === selectedLayerId);
-                  const isHoveredOrSelected = selectedIdx !== -1;
-
-                  // 1. Initial 2.5s Intro: start exploded in mid-air, then smoothly collapse into complete burger!
-                  // Assembled compact top positions (tight complete burger): idx * 28 + 80
-                  // Exploded intro top positions (mid-air spread): idx * 52 + 30
-                  let baseTop = isIntroExploded ? (idx * 52 + 30) : (idx * 28 + 80);
-
-                  let translateY = 0;
-                  let translateX = 0;
-
-                  // 2. When an ingredient is selected/hovered:
-                  // Open a clean focus gap (upper layers -24px, lower layers +24px)
-                  // so the selected ingredient NEVER covers adjacent layers!
-                  if (isHoveredOrSelected) {
-                    if (idx < selectedIdx) {
-                      translateY = -24; // Upper layers shift UP away from selected item
-                    } else if (idx > selectedIdx) {
-                      translateY = 24;  // Lower layers shift DOWN away from selected item
-                    } else {
-                      translateX = 22;  // Selected ingredient slides out RIGHT into clean spotlight space
-                      translateY = 0;
-                    }
-                  }
-
-                  const scale = isSelected ? 1.06 : isIntroExploded ? 1.02 : 1;
-                  const zIndex = isSelected ? 30 : 10 - idx;
-
-                  return (
-                    <div
-                      key={layer.id}
-                      onClick={() => setSelectedLayerId(isSelected ? 0 : layer.id)}
-                      onMouseEnter={() => setSelectedLayerId(layer.id)}
-                      style={{
-                        position: "absolute",
-                        top: baseTop,
-                        width: 175,
-                        transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
-                        transition: "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                        cursor: "pointer",
-                        zIndex: zIndex,
-                        filter: isSelected
-                          ? "drop-shadow(0 8px 20px rgba(201,161,90,0.95)) brightness(1.08)"
-                          : isIntroExploded
-                          ? "drop-shadow(0 4px 10px rgba(0,0,0,0.12))"
-                          : "drop-shadow(0 2px 4px rgba(0,0,0,0.06))"
-                      }}
-                    >
-                      {/* Transparent PNG Ingredient Layer Image */}
-                      <img
-                        src={layer.img}
-                        alt={layer.name}
-                        style={{
-                          width: "100%",
-                          height: "auto",
-                          display: "block",
-                          objectFit: "contain",
-                          pointerEvents: "auto"
-                        }}
-                      />
-
-                      {/* Floating Badge on Selected Layer */}
-                      {isSelected && (
-                        <div style={{
-                          position: "absolute",
-                          top: -6,
-                          right: -10,
-                          background: "var(--color-primary-dark)",
-                          color: "#fff",
-                          padding: "3px 10px",
-                          borderRadius: 999,
-                          fontSize: 11,
-                          fontWeight: 800,
-                          border: "1.5px solid var(--color-gold)",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                          whiteSpace: "nowrap",
-                          animation: "bounceIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)"
-                        }}>
-                          <span style={{ color: "var(--color-gold)" }}>{layer.id}.</span> {layer.name}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                <img
+                  src={fullBurgerImg}
+                  alt={item.title}
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    maxHeight: 340,
+                    display: "block",
+                    objectFit: "contain",
+                    filter: selectedLayerId > 0
+                      ? "drop-shadow(0 14px 28px rgba(201,161,90,0.85)) brightness(1.05)"
+                      : "drop-shadow(0 10px 22px rgba(0,0,0,0.16))",
+                    transform: selectedLayerId > 0 ? "scale(1.04) translateY(-6px)" : "none",
+                    transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                  }}
+                />
               </div>
 
               {/* Status Banner */}
               <div style={{
-                fontSize: 11.5, color: "var(--color-muted)", marginTop: 16,
+                fontSize: 11.5, color: "var(--color-muted)", marginTop: 12,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6
               }}>
-                <MousePointerClick size={14} color="var(--color-primary)" /> Bấm chọn từng nguyên liệu để xem lớp vị nẩy lên nhẹ nhàng
+                <MousePointerClick size={14} color="var(--color-primary)" /> Chiếc All-Star Burger nguyên bản hoàn chỉnh 100%
               </div>
             </div>
           </div>
