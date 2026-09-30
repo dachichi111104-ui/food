@@ -156,24 +156,36 @@ const FoodShowcaseSection = () => {
 
               {/* Stack of 5 Isolated Cutout PNG Ingredient Images */}
               <div style={{
-                position: "relative", width: 280, height: 320,
+                position: "relative", width: 280, height: 350,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"
               }}>
                 {item.layers.map((layer, idx) => {
                   const isSelected = selectedLayerId === layer.id;
+                  const selectedIdx = item.layers.findIndex(l => l.id === selectedLayerId);
 
-                  // 1. Initial 2.5s Intro Exploded Offset (Spread 5 layers vertically, matching burger.png layout!)
+                  // Base vertical spacing: 48px apart so layers are clearly separated and don't stick together
                   let translateY = 0;
+                  let translateX = 0;
+
+                  // 1. Initial 2.5s Intro Exploded Offset (Spread layers further apart)
                   if (isIntroExploded) {
-                    translateY = (idx - 2) * 52; // -104px, -52px, 0px, 52px, 104px
+                    translateY = (idx - 2) * 32; // -64px, -32px, 0, +32px, +64px
+                  } 
+                  // 2. Smart Accordion Gap when a layer is selected:
+                  // Open up space above & below the selected ingredient so it NEVER covers adjacent layers!
+                  else if (selectedIdx !== -1) {
+                    if (idx < selectedIdx) {
+                      translateY = -24; // Move upper layers UP
+                    } else if (idx > selectedIdx) {
+                      translateY = 24;  // Move lower layers DOWN
+                    } else {
+                      // Selected layer itself: pop right + floating glow
+                      translateY = -4;
+                      translateX = 18;
+                    }
                   }
 
-                  // 2. Gentle bounce & subtle highlight when specific layer is clicked/selected
-                  if (isSelected) {
-                    translateY -= 16;
-                  }
-
-                  const scale = isSelected ? 1.08 : isIntroExploded ? 1.04 : 1;
+                  const scale = isSelected ? 1.08 : isIntroExploded ? 1.03 : 1;
                   const zIndex = isSelected ? 30 : 10 - idx;
 
                   return (
@@ -183,17 +195,17 @@ const FoodShowcaseSection = () => {
                       onMouseEnter={() => setSelectedLayerId(layer.id)}
                       style={{
                         position: "absolute",
-                        top: idx * 30 + 30,
-                        width: 260,
-                        transform: `translateY(${translateY}px) scale(${scale})`,
-                        transition: "transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease",
+                        top: idx * 48 + 15,
+                        width: 250,
+                        transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
+                        transition: "transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease",
                         cursor: "pointer",
                         zIndex: zIndex,
                         filter: isSelected
-                          ? "drop-shadow(0 8px 18px rgba(201,161,90,0.85)) brightness(1.08)"
+                          ? "drop-shadow(0 8px 20px rgba(201,161,90,0.9)) brightness(1.1)"
                           : isIntroExploded
-                          ? "drop-shadow(0 4px 10px rgba(0,0,0,0.18))"
-                          : "none"
+                          ? "drop-shadow(0 4px 10px rgba(0,0,0,0.15))"
+                          : "drop-shadow(0 2px 5px rgba(0,0,0,0.08))"
                       }}
                     >
                       {/* Transparent PNG Ingredient Layer Image */}
@@ -213,8 +225,8 @@ const FoodShowcaseSection = () => {
                       {isSelected && (
                         <div style={{
                           position: "absolute",
-                          top: -6,
-                          right: -10,
+                          top: -8,
+                          right: -12,
                           background: "var(--color-primary-dark)",
                           color: "#fff",
                           padding: "3px 10px",
