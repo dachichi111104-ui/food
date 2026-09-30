@@ -173,15 +173,16 @@ const FoodShowcaseSection = () => {
                   let translateX = 0;
 
                   // 2. When an ingredient is selected/hovered:
-                  // Open a subtle focus gap around it while keeping the burger compact & assembled!
+                  // Open a generous 72px gap (upper layers -36px, lower layers +36px)
+                  // so the selected ingredient NEVER covers adjacent layers!
                   if (isHoveredOrSelected) {
                     if (idx < selectedIdx) {
-                      translateY = -14; // Upper layers shift up slightly
+                      translateY = -36; // Upper layers shift UP away from selected item
                     } else if (idx > selectedIdx) {
-                      translateY = 14;  // Lower layers shift down slightly
+                      translateY = 36;  // Lower layers shift DOWN away from selected item
                     } else {
-                      translateX = 24;  // Selected ingredient slides out RIGHT with spotlight glow
-                      translateY = -4;
+                      translateX = 28;  // Selected ingredient slides out RIGHT into clean spotlight space
+                      translateY = 0;
                     }
                   }
 
@@ -198,7 +199,7 @@ const FoodShowcaseSection = () => {
                         top: baseTop,
                         width: 240,
                         transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
-                        transition: "all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                        transition: "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
                         cursor: "pointer",
                         zIndex: zIndex,
                         filter: isSelected
