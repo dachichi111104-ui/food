@@ -164,23 +164,24 @@ const FoodShowcaseSection = () => {
                   const selectedIdx = item.layers.findIndex(l => l.id === selectedLayerId);
                   const isHoveredOrSelected = selectedIdx !== -1;
 
-                  // Base vertical spacing:
-                  // 1. Initial 2.5s Intro OR when selected: Explode with 65px air gap so every layer is separated cleanly!
-                  // 2. Normal assembled state: 42px spacing for natural burger shape
-                  const isExplodedState = isIntroExploded || isHoveredOrSelected;
+                  // 1. Initial 2.5s Intro: start exploded in mid-air, then smoothly collapse into complete burger!
+                  // Assembled compact top positions (tight complete burger): idx * 36 + 60
+                  // Exploded intro top positions (mid-air spread): idx * 62 + 20
+                  let baseTop = isIntroExploded ? (idx * 62 + 20) : (idx * 36 + 60);
 
-                  let baseTop = isExplodedState ? (idx * 65 + 20) : (idx * 42 + 45);
                   let translateY = 0;
                   let translateX = 0;
 
+                  // 2. When an ingredient is selected/hovered:
+                  // Open a subtle focus gap around it while keeping the burger compact & assembled!
                   if (isHoveredOrSelected) {
                     if (idx < selectedIdx) {
-                      translateY = -18; // Shift upper layers UP to open gap
+                      translateY = -14; // Upper layers shift up slightly
                     } else if (idx > selectedIdx) {
-                      translateY = 18;  // Shift lower layers DOWN to open gap
+                      translateY = 14;  // Lower layers shift down slightly
                     } else {
-                      translateX = 22;  // Pop selected layer out RIGHT
-                      translateY = -2;
+                      translateX = 24;  // Selected ingredient slides out RIGHT with spotlight glow
+                      translateY = -4;
                     }
                   }
 
@@ -197,12 +198,12 @@ const FoodShowcaseSection = () => {
                         top: baseTop,
                         width: 240,
                         transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
-                        transition: "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                        transition: "all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)",
                         cursor: "pointer",
                         zIndex: zIndex,
                         filter: isSelected
                           ? "drop-shadow(0 10px 24px rgba(201,161,90,0.95)) brightness(1.1)"
-                          : isExplodedState
+                          : isIntroExploded
                           ? "drop-shadow(0 4px 10px rgba(0,0,0,0.12))"
                           : "drop-shadow(0 2px 4px rgba(0,0,0,0.06))"
                       }}
