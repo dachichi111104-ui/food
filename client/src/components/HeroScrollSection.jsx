@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   ShoppingBag, ChevronRight, Sparkles, CheckCircle2,
-  ArrowDown, Info, ShieldCheck, ChevronUp
+  ArrowDown, Info, ShieldCheck
 } from "lucide-react";
 
 /* ── Import Burger Layer PNGs ── */
@@ -26,7 +25,7 @@ export const BURGER_LAYERS = [
     name: "Đế Bánh Mì Nướng Bơ",
     desc: "Đế bánh nướng giòn rụm giữ nhiệt độ và vị bơ thơm lừng.",
     img: bottomBunImg,
-    yPercent: 180, // Offset di chuyển xuống khi tách
+    yPercent: 125,
   },
   {
     index: 1,
@@ -34,7 +33,7 @@ export const BURGER_LAYERS = [
     name: "Thịt Bò Úc Nướng Than Hồng",
     desc: "100% bò Úc nhập khẩu ướp sốt tiêu đen, nướng mọng nước.",
     img: pattyImg,
-    yPercent: 90,
+    yPercent: 62,
   },
   {
     index: 2,
@@ -50,7 +49,7 @@ export const BURGER_LAYERS = [
     name: "Thịt Xông Khói & Phô Mai Cheddar",
     desc: "Bacon nướng giòn quyện phô mai Cheddar tan chảy.",
     img: baconImg,
-    yPercent: -90,
+    yPercent: -62,
   },
   {
     index: 4,
@@ -58,7 +57,7 @@ export const BURGER_LAYERS = [
     name: "Vỏ Bánh Mì Mè Bơ Tỏi",
     desc: "Vỏ bánh mè nướng bơ tỏi thơm giòn đậm đà.",
     img: topBunImg,
-    yPercent: -180,
+    yPercent: -125,
   },
 ];
 
@@ -78,8 +77,8 @@ const HeroScrollSection = () => {
   const lineRefs = useRef([]);
 
   /* State */
-  const [activeLayer, setActiveLayer] = useState(2); // Mặc định lớp giữa (Cà chua/Rau)
-  const [canInteract, setCanInteract] = useState(false); // Bật khi scroll progress >= 0.6
+  const [activeLayer, setActiveLayer] = useState(2);
+  const [canInteract, setCanInteract] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -89,13 +88,12 @@ const HeroScrollSection = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  /* ── Hàm setActive duy nhất cho Click / Keyboard ── */
   const handleSetActive = useCallback((index) => {
     if (index < 0 || index >= BURGER_LAYERS.length) return;
     setActiveLayer(index);
   }, []);
 
-  /* Keyboard Navigation (Up / Down Arrow) khi đã mở tương tác */
+  /* Keyboard Navigation (Up / Down Arrow) */
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!canInteract) return;
@@ -112,7 +110,7 @@ const HeroScrollSection = () => {
   }, [canInteract]);
 
   /* ════════════════════════════════════════════════════════════════════════════
-     TRẠNG THÁI 1: GSAP SCROLLTRIGGER TIMELINE (0 -> 100%)
+     GSAP SCROLLTRIGGER TIMELINE
      ════════════════════════════════════════════════════════════════════════════ */
   useEffect(() => {
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -122,7 +120,7 @@ const HeroScrollSection = () => {
     }
 
     const ctx = gsap.context(() => {
-      const endDistance = isMobile ? "+=300%" : "+=400%";
+      const endDistance = isMobile ? "+=250%" : "+=350%";
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -134,8 +132,7 @@ const HeroScrollSection = () => {
           anticipatePin: 1,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
-            // Chỉ bật tương tác chọn lớp khi progress >= 0.6
-            if (self.progress >= 0.58) {
+            if (self.progress >= 0.55) {
               setCanInteract(true);
             } else {
               setCanInteract(false);
@@ -144,37 +141,32 @@ const HeroScrollSection = () => {
         },
       });
 
-      /* ── 0% – 20%: Burger nguyên khối, scale 1 -> 1.06 ── */
+      /* ── 0% – 20%: Burger scale nhẹ ── */
       tl.to(burgerWrapperRef.current, {
-        scale: 1.06,
-        y: -10,
+        scale: 1.05,
+        y: -5,
         duration: 0.20,
         ease: "power2.inOut",
       }, 0);
 
-      /* ── 20% – 50%: Tách các lớp theo yPercent, Nền tối -> sáng, Tiêu đề THE STACK ── */
-      tl.to(heroBgRef.current, {
-        backgroundColor: "#FAF7F2",
-        duration: 0.30,
-        ease: "power2.inOut",
-      }, 0.20);
-
-      // Chuyển đổi tiêu đề
+      /* ── 20% – 50%: Chuyển đổi tiêu đề & Tách các lớp burger ── */
       tl.to(titleStage1Ref.current, {
         opacity: 0,
-        y: -25,
-        duration: 0.15,
+        y: -30,
+        pointerEvents: "none",
+        duration: 0.18,
         ease: "power2.inOut",
       }, 0.20);
 
       tl.to(titleStage2Ref.current, {
         opacity: 1,
         y: 0,
-        duration: 0.20,
+        pointerEvents: "auto",
+        duration: 0.22,
         ease: "power2.out",
       }, 0.25);
 
-      // Tách lớp theo yPercent với stagger 0.03 từ trên xuống (index 4 -> 0)
+      // Tách lớp burger theo yPercent
       BURGER_LAYERS.slice().reverse().forEach((layer, reverseIdx) => {
         const actualIdx = layer.index;
         const layerEl = layerRefs.current[actualIdx];
@@ -182,18 +174,18 @@ const HeroScrollSection = () => {
 
         tl.to(layerEl, {
           yPercent: layer.yPercent,
-          duration: 0.30,
+          duration: 0.32,
           ease: "power2.out",
         }, 0.20 + reverseIdx * 0.03);
       });
 
-      /* ── 50% – 60%: Nhãn bên phải hiện lần lượt + Đường kẻ nối ── */
+      /* ── 50% – 60%: Fade-in các nhãn bên phải ── */
       labelRefs.current.forEach((labelEl, idx) => {
         if (!labelEl) return;
         tl.to(labelEl, {
           opacity: 1,
           x: 0,
-          duration: 0.15,
+          duration: 0.18,
           ease: "power2.out",
         }, 0.50 + idx * 0.02);
       });
@@ -203,12 +195,12 @@ const HeroScrollSection = () => {
         tl.to(lineEl, {
           scaleX: 1,
           opacity: 1,
-          duration: 0.15,
+          duration: 0.18,
           ease: "power2.out",
         }, 0.52 + idx * 0.02);
       });
 
-      /* ── 60% – 100%: Giữ trạng thái tách lớp để tương tác ── */
+      /* ── 60% – 100%: Giữ tương tác ── */
       tl.to({}, { duration: 0.40 }, 0.60);
 
     }, containerRef);
@@ -222,7 +214,7 @@ const HeroScrollSection = () => {
       style={{
         position: "relative",
         width: "100%",
-        minHeight: isMobile ? "300vh" : "400vh",
+        minHeight: isMobile ? "250vh" : "350vh",
       }}
     >
       {/* ── PINNED WRAPPER ── */}
@@ -238,27 +230,25 @@ const HeroScrollSection = () => {
           justifyContent: "center",
         }}
       >
-        {/* Dynamic Background Layer */}
+        {/* Dark Luxury Gradient Background */}
         <div
           ref={heroBgRef}
           style={{
             position: "absolute",
             inset: 0,
-            backgroundColor: "#0D0E12",
-            transition: "background-color 0.1s linear",
-            willChange: "background-color",
+            background: "radial-gradient(ellipse at center, #1A1D26 0%, #0D0E12 100%)",
             zIndex: 1,
           }}
         />
 
-        {/* Decorative Ambient Grid */}
+        {/* Ambient Grid Accent */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            backgroundImage: "radial-gradient(rgba(201, 161, 90, 0.12) 1px, transparent 1px)",
+            backgroundImage: "radial-gradient(rgba(201, 161, 90, 0.15) 1px, transparent 1px)",
             backgroundSize: "36px 36px",
-            opacity: 0.6,
+            opacity: 0.5,
             zIndex: 2,
             pointerEvents: "none",
           }}
@@ -273,20 +263,20 @@ const HeroScrollSection = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 24,
           }}
         >
           {/* ════════════════════════════════════════════════════════════════
-             CỘT TRÁI: TIÊU ĐỀ & MÔ TẢ DYNAMIC
+             CỘT TRÁI: TIÊU ĐỀ & MÔ TẢ
              ════════════════════════════════════════════════════════════════ */}
-          <div style={{ flex: 1, maxWidth: 460, position: "relative", zIndex: 15 }}>
+          <div style={{ flex: 1, maxWidth: 460, position: "relative", minHeight: 380, zIndex: 15 }}>
             {/* Title Stage 1: Ban đầu */}
             <div
               ref={titleStage1Ref}
               style={{
                 position: "absolute",
-                top: "50%",
+                top: 0,
                 left: 0,
-                transform: "translateY(-50%)",
                 width: "100%",
                 opacity: 1,
                 willChange: "transform, opacity",
@@ -299,7 +289,7 @@ const HeroScrollSection = () => {
                   gap: 8,
                   padding: "6px 14px",
                   borderRadius: 999,
-                  background: "rgba(201,161,90,0.18)",
+                  background: "rgba(201,161,90,0.2)",
                   border: "1px solid var(--color-gold)",
                   color: "var(--color-gold)",
                   fontSize: 12,
@@ -314,10 +304,10 @@ const HeroScrollSection = () => {
 
               <h1
                 style={{
-                  fontSize: "clamp(34px, 4.5vw, 52px)",
+                  fontSize: "clamp(34px, 4.2vw, 52px)",
                   fontWeight: 800,
                   color: "#FFFFFF",
-                  lineHeight: 1.12,
+                  lineHeight: 1.15,
                   marginBottom: 16,
                   fontFamily: "var(--font-display)",
                 }}
@@ -328,8 +318,8 @@ const HeroScrollSection = () => {
                 </span>
               </h1>
 
-              <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 15.5, lineHeight: 1.6, marginBottom: 28 }}>
-                Khám phá chiếc Burger chuẩn vị — Cuộn xuống để xem hiệu ứng tách từng lớp nguyên liệu!
+              <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 15.5, lineHeight: 1.65, marginBottom: 28 }}>
+                Khám phá chiếc Burger chuẩn vị — Cuộn xuống để xem hiệu ứng tách từng lớp nguyên liệu độc đáo!
               </p>
 
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -348,69 +338,70 @@ const HeroScrollSection = () => {
                   <ShoppingBag size={18} /> Đặt Món Ngay <ChevronRight size={16} />
                 </a>
 
-                <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
                   <ArrowDown size={14} className="animate-bounce" color="var(--color-gold)" /> Cuộn chuột
                 </div>
               </div>
             </div>
 
-            {/* Title Stage 2: THE STACK */}
+            {/* Title Stage 2: THE STACK (Đã bật tương tác) */}
             <div
               ref={titleStage2Ref}
               style={{
                 position: "absolute",
-                top: "50%",
+                top: 0,
                 left: 0,
-                transform: "translateY(-50%)",
                 width: "100%",
                 opacity: 0,
+                pointerEvents: "none",
                 willChange: "transform, opacity",
               }}
             >
               <div
                 style={{
-                  color: "var(--color-primary)",
+                  color: "var(--color-gold)",
                   fontSize: 12.5,
                   fontWeight: 800,
-                  letterSpacing: 3,
+                  letterSpacing: 2.5,
                   textTransform: "uppercase",
-                  marginBottom: 8,
+                  marginBottom: 10,
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
                 }}
               >
-                <ShieldCheck size={16} color="var(--color-primary)" /> BẤM CHỌN NGUYÊN LIỆU ĐỂ XEM CHI TIẾT
+                <ShieldCheck size={16} color="var(--color-gold)" /> BẤM CHỌN NGUYÊN LIỆU ĐỂ XEM CHI TIẾT
               </div>
 
               <h2
                 style={{
-                  fontSize: "clamp(36px, 4.8vw, 56px)",
+                  fontSize: "clamp(36px, 4.5vw, 56px)",
                   fontWeight: 900,
-                  color: "#1E1E1E",
-                  lineHeight: 1.08,
+                  color: "#FFFFFF",
+                  lineHeight: 1.1,
                   marginBottom: 14,
                   fontFamily: "var(--font-display)",
+                  letterSpacing: "1px",
                 }}
               >
                 THE STACK
               </h2>
 
-              <p style={{ color: "#555", fontSize: 15, lineHeight: 1.6, marginBottom: 20 }}>
+              <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 15, lineHeight: 1.65, marginBottom: 20 }}>
                 Các thành phần được tách lớp riêng biệt. Nhấp vào bất kỳ nhãn hoặc lớp ảnh nào để làm nổi bật vị ngon trọn vẹn!
               </p>
 
-              {/* Status Banner when interaction is unlocked */}
+              {/* Status Banner */}
               <div
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "8px 16px",
+                  padding: "10px 18px",
                   borderRadius: 12,
-                  background: canInteract ? "rgba(201,161,90,0.18)" : "rgba(0,0,0,0.05)",
-                  border: canInteract ? "1px solid var(--color-gold)" : "1px dashed #CCC",
-                  color: canInteract ? "var(--color-primary-dark)" : "#888",
+                  background: canInteract ? "rgba(201,161,90,0.22)" : "rgba(255,255,255,0.08)",
+                  border: canInteract ? "1px solid var(--color-gold)" : "1px dashed rgba(255,255,255,0.3)",
+                  color: canInteract ? "var(--color-gold)" : "rgba(255,255,255,0.7)",
                   fontSize: 13,
                   fontWeight: 700,
                   transition: "all 0.3s ease",
@@ -425,7 +416,7 @@ const HeroScrollSection = () => {
           </div>
 
           {/* ════════════════════════════════════════════════════════════════
-             CỘT GIỮA: CONTAINER CHỨA CÁC LỚP BURGER (TRẠNG THÁI 2 INTERACTIVE)
+             CỘT GIỮA: CÁC LỚP BURGER TÁCH LỚP
              ════════════════════════════════════════════════════════════════ */}
           <div
             style={{
@@ -434,15 +425,15 @@ const HeroScrollSection = () => {
               justifyContent: "center",
               alignItems: "center",
               position: "relative",
-              height: 520,
+              height: 480,
             }}
           >
             <div
               ref={burgerWrapperRef}
               style={{
                 position: "relative",
-                width: 340,
-                height: 340,
+                width: 360,
+                height: 360,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -466,19 +457,18 @@ const HeroScrollSection = () => {
                       position: "absolute",
                       width: "100%",
                       height: "auto",
-                      maxHeight: 250,
+                      maxHeight: 240,
                       objectFit: "contain",
                       cursor: canInteract ? "pointer" : "default",
                       willChange: "transform, opacity, filter",
-                      /* TRẠNG THÁI 2: TRUYỀN PHONG CÁCH SÁNG / TỐI THEO YÊU CẦU */
-                      opacity: isDimmed ? 0.35 : 1,
+                      opacity: isDimmed ? 0.4 : 1,
                       filter: isSelected && canInteract
-                        ? "brightness(1.15) contrast(1.05) drop-shadow(0 0 24px rgba(201,161,90,0.85))"
+                        ? "brightness(1.2) contrast(1.08) drop-shadow(0 0 28px rgba(201,161,90,0.9))"
                         : isDimmed
-                        ? "brightness(0.6) grayscale(0.35)"
-                        : "drop-shadow(0 8px 18px rgba(0,0,0,0.25))",
+                        ? "brightness(0.65) grayscale(0.2)"
+                        : "drop-shadow(0 10px 20px rgba(0,0,0,0.5))",
                       transform: isSelected && canInteract
-                        ? "scale(1.04) translateX(12px)"
+                        ? "scale(1.05) translateX(10px)"
                         : "scale(1) translateX(0)",
                       transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
                       zIndex: isSelected ? 30 : 10 + layer.index,
@@ -490,21 +480,20 @@ const HeroScrollSection = () => {
           </div>
 
           {/* ════════════════════════════════════════════════════════════════
-             CỘT PHẢI: DANH SÁCH NHÃN CHỮ, ĐƯỜNG KẺ NỐI & TOOLTIP MÔ TẢ
+             CỘT PHẢI: NHÃN NGUYÊN LIỆU (HIGH CONTRAST)
              ════════════════════════════════════════════════════════════════ */}
           {!isMobile && (
             <div
               style={{
                 flex: 1,
-                maxWidth: 400,
+                maxWidth: 380,
                 display: "flex",
                 flexDirection: "column",
-                gap: 16,
+                gap: 14,
                 position: "relative",
                 zIndex: 25,
               }}
             >
-              {/* Hiển thị danh sách nhãn theo thứ tự từ trên xuống (index 4 -> 0) */}
               {BURGER_LAYERS.slice().reverse().map((layer) => {
                 const isSelected = activeLayer === layer.index;
                 const isDimmed = canInteract && activeLayer !== null && !isSelected;
@@ -522,32 +511,33 @@ const HeroScrollSection = () => {
                       padding: "12px 18px",
                       borderRadius: 16,
                       background: isSelected && canInteract
-                        ? "var(--color-white)"
-                        : "rgba(255,255,255,0.75)",
+                        ? "#FFFFFF"
+                        : "rgba(255, 255, 255, 0.1)",
+                      backdropFilter: "blur(12px)",
                       border: isSelected && canInteract
                         ? "2px solid var(--color-gold)"
-                        : "1px solid var(--color-border-light)",
+                        : "1px solid rgba(255, 255, 255, 0.18)",
                       boxShadow: isSelected && canInteract
-                        ? "0 8px 24px rgba(201,161,90,0.35)"
-                        : "0 2px 10px rgba(0,0,0,0.04)",
+                        ? "0 8px 24px rgba(201,161,90,0.45)"
+                        : "0 2px 10px rgba(0,0,0,0.2)",
                       cursor: canInteract ? "pointer" : "default",
                       pointerEvents: canInteract ? "auto" : "none",
-                      opacity: 0, // GSAP sẽ fade in ở stage 50-60%
+                      opacity: 0,
                       transform: "translateX(30px)",
                       transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-                      filter: isDimmed ? "brightness(0.8) opacity(0.5)" : "none",
+                      filter: isDimmed ? "opacity(0.4)" : "none",
                     }}
                   >
-                    {/* Đường kẻ ngắn nối tới lớp burger */}
+                    {/* Connecting line */}
                     <div
                       ref={(el) => (lineRefs.current[layer.index] = el)}
                       style={{
                         position: "absolute",
-                        left: isSelected && canInteract ? -50 : -35,
+                        left: isSelected && canInteract ? -45 : -30,
                         top: "50%",
-                        width: isSelected && canInteract ? 45 : 30,
+                        width: isSelected && canInteract ? 40 : 25,
                         height: 2,
-                        backgroundColor: isSelected && canInteract ? "var(--color-gold)" : "#BBB",
+                        backgroundColor: "var(--color-gold)",
                         transformOrigin: "right center",
                         transform: "scaleX(0)",
                         opacity: 0,
@@ -555,16 +545,16 @@ const HeroScrollSection = () => {
                       }}
                     />
 
-                    {/* Badge số thứ tự */}
+                    {/* Number Badge */}
                     <div
                       style={{
-                        width: 26,
-                        height: 26,
+                        width: 28,
+                        height: 28,
                         borderRadius: "50%",
                         background: isSelected && canInteract
                           ? "var(--color-primary)"
-                          : "var(--color-primary-pale)",
-                        color: isSelected && canInteract ? "#FFF" : "var(--color-primary)",
+                          : "rgba(255,255,255,0.2)",
+                        color: "#FFFFFF",
                         fontSize: 12,
                         fontWeight: 800,
                         display: "flex",
@@ -577,29 +567,27 @@ const HeroScrollSection = () => {
                       {layer.index + 1}
                     </div>
 
-                    {/* Tiêu đề nhãn */}
+                    {/* Label Info */}
                     <div style={{ flex: 1 }}>
                       <div
                         style={{
-                          fontSize: 13.5,
+                          fontSize: 14,
                           fontWeight: isSelected ? 800 : 600,
                           color: isSelected && canInteract
-                            ? "var(--color-primary-dark)"
-                            : "var(--color-ink)",
+                            ? "#1A1A1A"
+                            : "#FFFFFF",
                         }}
                       >
                         {layer.name}
                       </div>
 
-                      {/* Tooltip mô tả nhỏ xuất hiện ngay bên dưới khi được chọn */}
                       {isSelected && canInteract && (
                         <div
                           style={{
                             fontSize: 12,
-                            color: "var(--color-muted)",
+                            color: "#555",
                             marginTop: 4,
                             lineHeight: 1.45,
-                            animation: "fadeIn 0.3s ease forwards",
                           }}
                         >
                           {layer.desc}
@@ -609,7 +597,7 @@ const HeroScrollSection = () => {
 
                     <CheckCircle2
                       size={18}
-                      color={isSelected && canInteract ? "var(--color-primary)" : "#DDD"}
+                      color={isSelected && canInteract ? "var(--color-primary)" : "rgba(255,255,255,0.3)"}
                     />
                   </div>
                 );
