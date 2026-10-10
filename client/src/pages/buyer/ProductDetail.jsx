@@ -35,6 +35,7 @@ const ProductDetail = () => {
   const [message, setMessage] = useState("");
   const [addingToCart, setAddingToCart] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -112,7 +113,16 @@ const ProductDetail = () => {
               display: "flex", alignItems: "center", justifyContent: "center",
               border: "1px solid var(--color-border)", overflow: "hidden",
             }}>
-              <Utensils size={72} color="var(--color-cream-deep)" style={{ opacity: 0.5 }} />
+              {(data.product.image_url || data.product.image) && !imgError ? (
+                <img
+                  src={data.product.image_url || data.product.image}
+                  alt={data.product.name}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <Utensils size={72} color="var(--color-cream-deep)" style={{ opacity: 0.5 }} />
+              )}
             </div>
 
             {/* Shop card */}

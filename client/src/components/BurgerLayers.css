@@ -1,0 +1,115 @@
+/* BurgerLayers.css */
+.bl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.bl__img {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.bl__img img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Lớp tối nằm dưới */
+.bl__dim {
+  filter: brightness(.4) saturate(.6);
+}
+
+/* Lớp sáng nằm trên, bị cắt theo dải clip-path */
+.bl__lit {
+  filter: brightness(1.12) contrast(1.05);
+  transition: clip-path .35s cubic-bezier(.2, .8, .2, 1);
+  will-change: clip-path;
+}
+
+.bl__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.bl__list button {
+  width: 100%;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  text-align: left;
+  padding: 16px 20px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  background: #fbf6ef;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+  outline: none;
+}
+
+.bl__list button:hover {
+  background: #f6ecdc;
+}
+
+.bl__list button:focus-visible {
+  border-color: #c9a45c;
+}
+
+.bl__list button.is-active {
+  border-color: #c9a45c;
+  background: #fbeccd;
+}
+
+.bl__list b {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #c9a45c;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.bl__list span {
+  display: flex;
+  flex-direction: column;
+}
+
+.bl__list strong {
+  font-size: 15px;
+  color: #222;
+  font-weight: 700;
+}
+
+.bl__list small {
+  display: block;
+  opacity: 0.75;
+  font-size: 12.5px;
+  margin-top: 2px;
+  line-height: 1.4;
+  color: #444;
+}
+
+@media (max-width: 768px) {
+  .bl {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
