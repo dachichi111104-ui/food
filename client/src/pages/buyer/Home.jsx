@@ -4,7 +4,6 @@ import { listShops, listPublicCategories } from "../../services/shop.service";
 import { toggleFavorite } from "../../services/favorite.service";
 import BannerCarousel from "../../components/BannerCarousel";
 import FoodShowcaseSection from "../../components/FoodShowcaseSection";
-import HeroScrollSection from "../../components/HeroScrollSection";
 import { useAuth } from "../../context/AuthContext";
 import {
   Search, MapPin, Star, ChevronRight, Utensils,
@@ -190,11 +189,6 @@ const Home = () => {
           </div>
         </div>
       )}
-
-      {/* ══════════════════════════════
-          HERO SCROLL ANIMATION (GSAP)
-      ══════════════════════════════ */}
-      <HeroScrollSection />
 
       {/* Banner Carousel */}
       <BannerCarousel />
