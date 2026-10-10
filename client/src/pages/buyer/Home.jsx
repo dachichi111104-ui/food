@@ -190,6 +190,94 @@ const Home = () => {
         </div>
       )}
 
+      {/* ══════════════════════════════
+          HERO (KHUNG ĐỎ TÌM KIẾM & LỌC)
+      ══════════════════════════════ */}
+      <section className="panel-hero" style={{ padding: "64px 0 72px" }}>
+        <div className="container" style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ maxWidth: 640 }}>
+            <p style={{
+              color: "var(--color-gold)", fontWeight: 700, fontSize: 12,
+              letterSpacing: "2px", textTransform: "uppercase", marginBottom: 16,
+              display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span style={{ width: 24, height: 1, background: "var(--color-gold)", display: "inline-block" }} />
+              Giao hàng tận nơi · Nhanh chóng · Tiện lợi
+            </p>
+
+            <h1 style={{
+              fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 700, color: "#fff",
+              lineHeight: 1.15, marginBottom: 16,
+            }}>
+              Thèm món gì?<br />
+              <em style={{ color: "var(--color-gold)", fontStyle: "italic" }}>FoodGo lo.</em>
+            </h1>
+
+            <p style={{
+              color: "rgba(255,255,255,0.80)", fontSize: 16, lineHeight: 1.65,
+              marginBottom: 32, maxWidth: 460,
+            }}>
+              Khám phá hàng trăm quán ăn ngon quanh bạn — đặt món trong vài giây, giao tận cửa.
+            </p>
+
+            {/* City, Search & Advanced Filter Bar */}
+            <form onSubmit={handleSearch}>
+              <div style={{
+                display: "flex", gap: 8,
+                background: "#fff", borderRadius: "var(--radius-pill)",
+                padding: "6px 6px 6px 16px",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.22)",
+                alignItems: "center", flexWrap: "wrap",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, borderRight: "1px solid var(--color-border-light)", paddingRight: 10 }}>
+                  <MapPin size={16} color="var(--color-primary)" />
+                  <select
+                    value={cityFilter}
+                    onChange={(e) => setCityFilter(e.target.value)}
+                    style={{
+                      border: "none", outline: "none", background: "transparent",
+                      fontSize: 13, fontWeight: 600, color: "var(--color-ink)", cursor: "pointer",
+                    }}
+                  >
+                    {CITIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+                  <Search size={17} style={{ color: "var(--color-muted)", flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    placeholder="Tìm quán ăn, món ăn..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    style={{
+                      width: "100%", border: "none", outline: "none", fontSize: 14.5,
+                      color: "var(--color-ink)", background: "transparent", padding: "4px 0",
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowFilterModal(true)}
+                  className="btn btn-outline"
+                  style={{ borderRadius: "var(--radius-pill)", padding: "10px 14px", fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}
+                  title="Lọc nâng cao"
+                >
+                  <SlidersHorizontal size={14} /> Lọc
+                </button>
+
+                <button type="submit" className="btn btn-primary" style={{ borderRadius: "var(--radius-pill)", padding: "10px 22px", fontSize: 14 }}>
+                  Tìm kiếm
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
       {/* Banner Carousel */}
       <BannerCarousel />
 
