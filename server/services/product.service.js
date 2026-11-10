@@ -139,7 +139,9 @@ const listPublicProducts = async ({ shop_id, category_id, search, page = 1, limi
   const filter = { is_active: true };
   if (shop_id) filter.shop_id = shop_id;
   if (category_id) filter.category_id = category_id;
-  if (search) filter.name = { $regex: search, $options: "i" };
+  if (search && search.trim()) {
+    filter.name = { $regex: search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" };
+  }
 
   let approvedShopIds = null;
   if (!shop_id) {

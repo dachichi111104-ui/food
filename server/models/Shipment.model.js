@@ -23,7 +23,6 @@ const shipmentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-shipmentSchema.index({ shop_order_id: 1 }, { unique: true });
 shipmentSchema.index({ shipper_id: 1 });
 
 module.exports = mongoose.model("Shipment", shipmentSchema);

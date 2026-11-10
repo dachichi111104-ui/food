@@ -355,7 +355,12 @@ const OrderDetail = () => {
             </div>
             <div style={{ textAlign: "right" }}>
               <div className="text-price" style={{ fontSize: 24 }}>{order.total_amount.toLocaleString()}đ</div>
-              {order.status === "PENDING_PAYMENT" && (
+              {order.discount_amount > 0 && (
+                <div style={{ fontSize: 12, color: "var(--color-success)", fontWeight: 600, marginTop: 2 }}>
+                  Đã giảm voucher: -{order.discount_amount.toLocaleString()}đ
+                </div>
+              )}
+              {order.status !== "CANCELLED" && shopOrders.length > 0 && shopOrders.every((so) => ["PENDING_PAYMENT", "CONFIRMED"].includes(so.status)) && (
                 <button onClick={handleCancel} disabled={actionLoading} className="btn btn-danger btn-sm" style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
                   <XCircle size={14} /> {actionLoading ? "Đang hủy..." : "Hủy đơn hàng"}
                 </button>

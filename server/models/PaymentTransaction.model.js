@@ -30,9 +30,5 @@ const paymentTransactionSchema = new mongoose.Schema(
 );
 
 paymentTransactionSchema.index({ order_id: 1 });
-paymentTransactionSchema.index(
-  { gateway_transaction_ref: 1 },
-  { unique: true }
-);
 
 module.exports = mongoose.model("PaymentTransaction", paymentTransactionSchema);

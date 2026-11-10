@@ -154,7 +154,8 @@ const processChatMessage = async (userId, userMessage) => {
   }
 
   if (msg.length > 2) {
-    const products = await Product.find({ name: { $regex: msg, $options: "i" }, is_active: true }).limit(3);
+    const safeRegex = msg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const products = await Product.find({ name: { $regex: safeRegex, $options: "i" }, is_active: true }).limit(3);
     if (products.length) {
       const pList = products.map((p) => `• ${p.name}`);
       return {

@@ -94,6 +94,7 @@ const Checkout = () => {
         recipient_name: selectedAddress?.recipient_name || "",
         recipient_phone: selectedAddress?.recipient_phone || "",
         shipping_address: selectedAddress?.full_address || "",
+        voucher_code: appliedVoucher?.code || "",
       };
       const orderResult = await checkout(orderPayload);
       refreshCartCount();

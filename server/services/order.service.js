@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
-const { Order, ShopOrder, OrderItem, Cart, CartItem, Review, User } = require("../models");
+const { Order, ShopOrder, OrderItem, Cart, CartItem, Review, User, Voucher, ProductVariant } = require("../models");
 const cartService = require("./cart.service");
 const inventoryService = require("./inventory.service");
+const voucherService = require("./voucher.service");
 const emailService = require("./email.service");
 const ApiError = require("../utils/ApiError");
 const { canTransition } = require("../utils/orderStateMachine");
@@ -17,9 +18,28 @@ const checkout = async (userId, payload = {}) => {
     recipient_name = "",
     recipient_phone = "",
     shipping_address = "",
+    voucher_code = "",
   } = payload;
 
   const { shopOrders: groups, order_total } = await cartService.getCartGroupedByShop(userId);
+
+  if (!groups || groups.length === 0) {
+    throw new ApiError(400, "Giỏ hàng của bạn đang trống.");
+  }
+
+  // Xử lý áp dụng voucher nếu có
+  let voucherData = null;
+  let discountAmount = 0;
+  if (voucher_code && voucher_code.trim()) {
+    const subtotal = groups.reduce((s, g) => s + g.subtotal_amount, 0);
+    voucherData = await voucherService.applyVoucher({
+      code: voucher_code.trim(),
+      order_subtotal: subtotal,
+    });
+    discountAmount = voucherData.discount_amount || 0;
+  }
+
+  const finalTotal = Math.max(0, order_total - discountAmount);
 
   const session = await mongoose.startSession();
   let createdOrder;
@@ -30,21 +50,32 @@ const checkout = async (userId, payload = {}) => {
 
   try {
     await session.withTransaction(async () => {
-      // 1. Tạo Order tổng
+      // 1. Tạo Order tổng kèm thông tin voucher
       const [order] = await Order.create(
         [
           {
             user_id: userId,
-            total_amount: order_total,
+            total_amount: finalTotal,
             payment_method,
             recipient_name,
             recipient_phone,
             shipping_address,
             status: initialOrderStatus,
+            voucher_id: voucherData?.voucher_id || null,
+            discount_amount: discountAmount,
           },
         ],
         { session }
       );
+
+      // Cập nhật lượt sử dụng của voucher
+      if (voucherData?.voucher_id) {
+        await Voucher.findByIdAndUpdate(
+          voucherData.voucher_id,
+          { $inc: { used_count: 1 } },
+          { session }
+        );
+      }
 
       // 2. Với mỗi shop, tạo ShopOrder + OrderItem + reserve stock từng variant
       for (const group of groups) {
@@ -66,9 +97,13 @@ const checkout = async (userId, payload = {}) => {
         );
 
         for (const item of group.items) {
-          // Reserve tồn kho atomic - throw ApiError(409) nếu không đủ hàng,
-          // sẽ tự động rollback toàn bộ transaction nhờ session.withTransaction
+          // Reserve tồn kho atomic - throw ApiError(409) nếu không đủ hàng
           await inventoryService.reserveStock(item.variant.id, item.quantity, session);
+
+          // Nếu là COD, hàng đã xác nhận xuất kho: commitStock ngay trong transaction
+          if (isCOD) {
+            await inventoryService.commitStock(item.variant.id, item.quantity, session);
+          }
 
           await OrderItem.create(
             [
@@ -88,7 +123,9 @@ const checkout = async (userId, payload = {}) => {
 
       // 3. Xoá cart sau khi tạo Order thành công
       const cart = await Cart.findOne({ user_id: userId }).session(session);
-      await CartItem.deleteMany({ cart_id: cart._id }).session(session);
+      if (cart) {
+        await CartItem.deleteMany({ cart_id: cart._id }).session(session);
+      }
 
       createdOrder = order;
     });
@@ -175,10 +212,10 @@ const listMyOrders = async (userId, { page = 1, limit = 10 }) => {
 const cancelOrder = async (userId, orderId) => {
   const order = await Order.findOne({ _id: orderId, user_id: userId });
   if (!order) {
-    throw new ApiError(404, "Order not found");
+    throw new ApiError(404, "Không tìm thấy đơn hàng");
   }
-  if (order.status !== "PENDING_PAYMENT") {
-    throw new ApiError(400, "Only orders pending payment can be cancelled by buyer");
+  if (order.status === "CANCELLED") {
+    throw new ApiError(400, "Đơn hàng này đã bị hủy trước đó");
   }
 
   const shopOrders = await ShopOrder.find({ order_id: order._id });
@@ -186,7 +223,7 @@ const cancelOrder = async (userId, orderId) => {
     (so) => !["PENDING_PAYMENT", "CONFIRMED"].includes(so.status)
   );
   if (nonCancellable) {
-    throw new ApiError(400, "Order cannot be cancelled at this stage");
+    throw new ApiError(400, "Quán ăn đã bắt đầu chuẩn bị hoặc đang giao hàng, không thể hủy đơn vào lúc này");
   }
 
   const shopOrderIds = shopOrders.map((so) => so._id);
@@ -196,8 +233,28 @@ const cancelOrder = async (userId, orderId) => {
   try {
     await session.withTransaction(async () => {
       for (const item of items) {
-        await inventoryService.releaseStock(item.variant_id, item.quantity, session);
+        if (order.payment_method === "COD") {
+          // COD đã commitStock khi tạo đơn, nên hoàn lại vào stock
+          await ProductVariant.findOneAndUpdate(
+            { _id: item.variant_id },
+            { $inc: { stock: item.quantity } },
+            { session }
+          );
+        } else {
+          // VNPAY PENDING_PAYMENT chỉ mới reserve, giải phóng reserved_quantity
+          await inventoryService.releaseStock(item.variant_id, item.quantity, session);
+        }
       }
+
+      // Giảm used_count của voucher nếu đơn hàng có áp dụng
+      if (order.voucher_id) {
+        await Voucher.findByIdAndUpdate(
+          order.voucher_id,
+          { $inc: { used_count: -1 } },
+          { session }
+        );
+      }
+
       order.status = "CANCELLED";
       await order.save({ session });
 
@@ -266,6 +323,13 @@ const cancelExpiredUnpaidOrders = async () => {
         await session.withTransaction(async () => {
           for (const item of items) {
             await inventoryService.releaseStock(item.variant_id, item.quantity, session);
+          }
+          if (order.voucher_id) {
+            await Voucher.findByIdAndUpdate(
+              order.voucher_id,
+              { $inc: { used_count: -1 } },
+              { session }
+            );
           }
           order.status = "CANCELLED";
           await order.save({ session });

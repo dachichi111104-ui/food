@@ -35,7 +35,7 @@ async function validateOrderChatPermission(userId, userRole, orderId, targetRole
 
   const actualOrderId = shopOrder ? shopOrder._id : parentOrder._id;
   const buyerId = parentOrder ? parentOrder.user_id?.toString() : null;
-  const sellerOwnerId = shopOrder?.shop_id?.owner_id?.toString();
+  const sellerOwnerId = (shopOrder?.shop_id?.user_id || shopOrder?.shop_id?.owner_id)?.toString();
 
   // Find shipment to check assigned shipper
   const shipment = shopOrder ? await Shipment.findOne({ shop_order_id: shopOrder._id }) : null;
@@ -45,15 +45,15 @@ async function validateOrderChatPermission(userId, userRole, orderId, targetRole
   if (userRole === "admin") {
     // Admin has access to support any order
   } else if (userRole === "buyer") {
-    if (buyerId && buyerId !== userId.toString()) {
+    if (!buyerId || buyerId !== userId.toString()) {
       throw new ApiError(403, "Bạn không có quyền truy cập cuộc trò chuyện của đơn hàng này.");
     }
   } else if (userRole === "seller") {
-    if (sellerOwnerId && sellerOwnerId !== userId.toString()) {
+    if (!sellerOwnerId || sellerOwnerId !== userId.toString()) {
       throw new ApiError(403, "Bạn không phải chủ quán của đơn hàng này.");
     }
   } else if (userRole === "shipper") {
-    if (shipperId && shipperId !== userId.toString()) {
+    if (!shipperId || shipperId !== userId.toString()) {
       throw new ApiError(403, "Bạn không phải là Shipper phụ trách đơn hàng này.");
     }
   } else {
@@ -113,14 +113,22 @@ const sendMessage = async (senderId, payload) => {
 const listMessages = async (userId, userRole, query = {}) => {
   const { target_role, order_id, limit = 100 } = query;
 
+  let perm = null;
   if (order_id) {
-    await validateOrderChatPermission(userId, userRole, order_id, target_role, "view");
+    perm = await validateOrderChatPermission(userId, userRole, order_id, target_role, "view");
   }
 
   const filter = {};
 
   if (order_id) {
-    filter.order_id = order_id;
+    const ids = [order_id];
+    if (perm?.actualOrderId && !ids.some((id) => id.toString() === perm.actualOrderId.toString())) {
+      ids.push(perm.actualOrderId);
+    }
+    if (perm?.parentOrder?._id && !ids.some((id) => id.toString() === perm.parentOrder._id.toString())) {
+      ids.push(perm.parentOrder._id);
+    }
+    filter.order_id = ids.length === 1 ? ids[0] : { $in: ids };
 
     // Filter pairwise conversation based on roles
     if (userRole === "buyer" && target_role === "seller") {

@@ -74,11 +74,14 @@ const getPublicShop = async (shopId) => {
 const listPublicShops = async ({ search, city, category_id, page = 1, limit = 20 }) => {
   const filter = { status: "approved" };
 
+  const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   if (city) {
-    const cityRegex = new RegExp(city.replace("TP.", "").replace(".", "").trim(), "i");
+    const cleanCity = city.replace("TP.", "").replace(".", "").trim();
+    const cityRegex = new RegExp(escapeRegex(cleanCity), "i");
     filter.$or = [{ city: { $regex: cityRegex } }, { address: { $regex: cityRegex } }];
-  } else if (search) {
-    const searchRegex = new RegExp(search, "i");
+  } else if (search && search.trim()) {
+    const searchRegex = new RegExp(escapeRegex(search.trim()), "i");
     filter.$or = [
       { name: { $regex: searchRegex } },
       { address: { $regex: searchRegex } },
