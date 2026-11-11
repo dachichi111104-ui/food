@@ -12,26 +12,10 @@ const buildPaymentUrl = ({
   txnRef,
   ipAddr,
 }) => {
-  const tmnCode = process.env.VNPAY_TMN_CODE;
-  const secretKey = process.env.VNPAY_HASH_SECRET;
-  const vnpUrl = process.env.VNPAY_URL;
-  const returnUrl = process.env.VNPAY_RETURN_URL;
-
-  if (!tmnCode) {
-    throw new Error("VNPAY_TMN_CODE is missing");
-  }
-
-  if (!secretKey) {
-    throw new Error("VNPAY_HASH_SECRET is missing");
-  }
-
-  if (!vnpUrl) {
-    throw new Error("VNPAY_URL is missing");
-  }
-
-  if (!returnUrl) {
-    throw new Error("VNPAY_RETURN_URL is missing");
-  }
+  const tmnCode = process.env.VNPAY_TMN_CODE || "5ZRFSRU0";
+  const secretKey = process.env.VNPAY_HASH_SECRET || "IRYOLRNMCEZMBMEWQENQOIKOQITKQFMN";
+  const vnpUrl = process.env.VNPAY_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+  const returnUrl = process.env.VNPAY_RETURN_URL || "http://localhost:5000/api/payments/vnpay/return";
 
   const createDate = moment().format("YYYYMMDDHHmmss");
 

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { listMyShopOrders } from "../../services/shopOrder.service";
 import { getMyShopProducts } from "../../services/product.service";
-import { getMyShops, createShop } from "../../services/shop.service";
-import { VIETNAM_LOCATIONS } from "../../data/vietnamLocations";
-import { Star, Calendar, Store, Plus, DollarSign, ShoppingBag, CheckCircle, XCircle, TrendingUp, Loader2, ArrowUpRight } from "lucide-react";
+import { getMyShops } from "../../services/shop.service";
+import { Star, Calendar, Store, Plus, DollarSign, ShoppingBag, CheckCircle, XCircle, TrendingUp, Loader2, ArrowUpRight, Clock } from "lucide-react";
 
 const SellerDashboard = () => {
+  const navigate = useNavigate();
   const [shops, setShops] = useState([]);
   const [selectedShopId, setSelectedShopId] = useState("");
   const [orders, setOrders] = useState([]);
@@ -18,24 +19,15 @@ const SellerDashboard = () => {
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
 
-  /* Create new shop modal */
-  const [showCreateShopModal, setShowCreateShopModal] = useState(false);
-  const [newShopForm, setNewShopForm] = useState({
-    name: "",
-    description: "",
-    address: "",
-    city: "TP. Hồ Chí Minh",
-  });
-  const [createShopLoading, setCreateShopLoading] = useState(false);
-  const [createShopError, setCreateShopError] = useState("");
-
   const fetchShops = async () => {
     try {
       const res = await getMyShops();
       const shopList = res.shops || [];
       setShops(shopList);
       if (shopList.length > 0 && !selectedShopId) {
-        setSelectedShopId(shopList[0]._id);
+        // Ưu tiên chọn quán đã duyệt để xem thống kê
+        const approvedShop = shopList.find((s) => s.status === "approved");
+        setSelectedShopId(approvedShop ? approvedShop._id : shopList[0]._id);
       }
     } catch {
       // ignore
@@ -62,28 +54,12 @@ const SellerDashboard = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [selectedShopId]);
-
-  /* Handle Create New Shop */
-  const handleCreateNewShopSubmit = async (e) => {
-    e.preventDefault();
-    setCreateShopLoading(true);
-    setCreateShopError("");
-    try {
-      const res = await createShop(newShopForm);
-      setShowCreateShopModal(false);
-      setNewShopForm({ name: "", description: "", address: "", city: "TP. Hồ Chí Minh" });
-      await fetchShops();
-      if (res.shop?._id) {
-        setSelectedShopId(res.shop._id);
-      }
-    } catch (err) {
-      setCreateShopError(err.response?.data?.message || "Tạo quán ăn mới thất bại");
-    } finally {
-      setCreateShopLoading(false);
+    if (selectedShopId) {
+      fetchData();
+    } else {
+      setLoading(false);
     }
-  };
+  }, [selectedShopId]);
 
   /* Accurate Date Filtering Logic */
   const getFilteredOrders = () => {
@@ -190,23 +166,77 @@ const SellerDashboard = () => {
                 cursor: "pointer",
               }}
             >
-              {shops.map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.name} ({s.city})
-                </option>
-              ))}
+              {shops.map((s) => {
+                const statusLabel =
+                  s.status === "approved"
+                    ? "Đã duyệt"
+                    : s.status === "pending"
+                    ? "Chờ duyệt"
+                    : s.status === "rejected"
+                    ? "Bị từ chối"
+                    : s.status;
+                return (
+                  <option key={s._id} value={s._id}>
+                    {s.name} ({s.city}) — [{statusLabel}]
+                  </option>
+                );
+              })}
             </select>
           )}
 
           <button
             className="btn btn-gold btn-sm"
-            onClick={() => setShowCreateShopModal(true)}
+            onClick={() => navigate("/seller/shop?create=true")}
             style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }}
           >
-            <Plus size={15} /> Tạo thêm Quán ăn mới
+            <Plus size={15} /> Đăng ký Quán mới
           </button>
         </div>
       </div>
+
+      {/* Pending status warning banner */}
+      {activeShopObj && activeShopObj.status === "pending" && (
+        <div
+          style={{
+            marginBottom: 20,
+            padding: "14px 18px",
+            borderRadius: "var(--radius-md)",
+            background: "#FFFBEB",
+            border: "1px solid #FCD34D",
+            color: "#92400E",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12,
+          }}
+        >
+          <Clock size={20} style={{ flexShrink: 0, marginTop: 2, color: "#D97706" }} />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
+              Quán "{activeShopObj.name}" đang chờ Quản trị viên duyệt hồ sơ
+            </div>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: "#B45309" }}>
+              Quán ăn hiện chưa mở bán chính thức trên sàn FoodGo. Khi được Admin duyệt, quán sẽ tự động tiếp nhận đơn hàng và cập nhật doanh thu.
+              Bạn có thể theo dõi tiến trình phê duyệt hoặc chỉnh sửa thông tin tại trang{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/seller/shop")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  textDecoration: "underline",
+                  fontWeight: 700,
+                  color: "#92400E",
+                  cursor: "pointer",
+                }}
+              >
+                Shop của tôi
+              </button>
+              .
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 2. Time Filter Selection Bar */}
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
@@ -363,72 +393,6 @@ const SellerDashboard = () => {
           </div>
         )}
       </div>
-
-      {/* Modal: Create New Shop */}
-      {showCreateShopModal && (
-        <div className="logout-modal-overlay" onClick={() => setShowCreateShopModal(false)}>
-          <div className="logout-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500, textAlign: "left" }}>
-            <h3 style={{ fontSize: 18, marginBottom: 16 }}>Đăng ký tạo thêm Quán ăn mới</h3>
-
-            {createShopError && <div className="alert alert-error" style={{ marginBottom: 12 }}>{createShopError}</div>}
-
-            <form onSubmit={handleCreateNewShopSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div className="field">
-                <label>Tên Quán ăn mới *</label>
-                <input
-                  className="input"
-                  placeholder="VD: Quán Cơm Tấm Sài Gòn Branch 2"
-                  value={newShopForm.name}
-                  onChange={(e) => setNewShopForm({ ...newShopForm, name: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="field">
-                <label>Thành phố *</label>
-                <select
-                  className="input"
-                  value={newShopForm.city}
-                  onChange={(e) => setNewShopForm({ ...newShopForm, city: e.target.value })}
-                >
-                  {VIETNAM_LOCATIONS.map((c) => (
-                    <option key={c.city} value={c.city}>{c.city}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="field">
-                <label>Địa chỉ chi tiết Quán *</label>
-                <input
-                  className="input"
-                  placeholder="VD: 120 Nguyễn Thị Minh Khai, Phường Võ Thị Sáu, Quận 3"
-                  value={newShopForm.address}
-                  onChange={(e) => setNewShopForm({ ...newShopForm, address: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="field">
-                <label>Mô tả ngắn về Quán ăn</label>
-                <textarea
-                  className="input"
-                  rows={3}
-                  placeholder="Giới thiệu món ăn đặc trưng của quán..."
-                  value={newShopForm.description}
-                  onChange={(e) => setNewShopForm({ ...newShopForm, description: e.target.value })}
-                />
-              </div>
-
-              <div style={{ marginTop: 10, display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                <button type="button" className="btn btn-outline" onClick={() => setShowCreateShopModal(false)}>Hủy</button>
-                <button type="submit" className="btn btn-primary" disabled={createShopLoading}>
-                  {createShopLoading ? <Loader2 size={15} className="spin" /> : "Xác nhận tạo quán"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   );
 };

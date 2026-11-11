@@ -8,23 +8,29 @@ const createShop = async (userId, data) => {
     description: data.description,
     address: data.address,
     city: data.city || "TP. Hồ Chí Minh",
+    district: data.district,
+    ward: data.ward,
+    street: data.street,
+    house_number: data.house_number,
     logo_url: data.logo_url,
     cover_url: data.cover_url,
-    status: "approved", // Auto-approve or pending
+    status: "pending", // Quán mới tạo luôn ở trạng thái chờ Admin duyệt
   });
 
   return shop;
 };
 
-const getMyShops = async (userId) => {
-  const shops = await Shop.find({ user_id: userId }).sort({ createdAt: -1 });
+const getMyShops = async (userId, query = {}) => {
+  const filter = { user_id: userId };
+  if (query.status) filter.status = query.status;
+  const shops = await Shop.find(filter).sort({ createdAt: -1 });
   return shops;
 };
 
 const getMyShop = async (userId, shopId = null) => {
   const filter = { user_id: userId };
   if (shopId) filter._id = shopId;
-  const shop = await Shop.findOne(filter);
+  const shop = await Shop.findOne(filter).sort({ createdAt: -1 });
   if (!shop) {
     throw new ApiError(404, "You don't have a shop yet");
   }
@@ -43,8 +49,17 @@ const updateMyShop = async (userId, data, shopId = null) => {
   if (data.description !== undefined) shop.description = data.description;
   if (data.address !== undefined) shop.address = data.address;
   if (data.city) shop.city = data.city;
+  if (data.district !== undefined) shop.district = data.district;
+  if (data.ward !== undefined) shop.ward = data.ward;
+  if (data.street !== undefined) shop.street = data.street;
+  if (data.house_number !== undefined) shop.house_number = data.house_number;
   if (data.logo_url) shop.logo_url = data.logo_url;
   if (data.cover_url) shop.cover_url = data.cover_url;
+
+  // Nếu quán bị từ chối trước đó, khi sửa xong tự chuyển về pending để Admin duyệt lại
+  if (shop.status === "rejected") {
+    shop.status = "pending";
+  }
 
   await shop.save();
   return shop;

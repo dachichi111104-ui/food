@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getMyShopProducts, deleteProduct } from "../../services/product.service";
 import { listPublicCategories } from "../../services/shop.service";
 import DashboardLayout from "../../components/DashboardLayout";
 import { Plus, Pencil, EyeOff, Package, CheckCircle2, ImageOff, Star, ShoppingBag } from "lucide-react";
 
 const ProductManagement = () => {
+  const [searchParams] = useSearchParams();
+  const shopId = searchParams.get("shop_id");
   const [products, setProducts] = useState([]);
   const [categoryMap, setCategoryMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -14,9 +16,14 @@ const ProductManagement = () => {
 
   const fetchProducts = async () => {
     setLoading(true);
-    try { setProducts((await getMyShopProducts()).products); }
-    catch (err) { setError(err.response?.data?.message || "Không tải được sản phẩm. Bạn đã tạo shop chưa?"); }
-    finally { setLoading(false); }
+    try {
+      const data = await getMyShopProducts(shopId ? { shop_id: shopId } : {});
+      setProducts(data.products || []);
+    } catch (err) {
+      setError(err.response?.data?.message || "Không tải được sản phẩm. Bạn đã tạo shop chưa?");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -28,7 +35,7 @@ const ProductManagement = () => {
         setCategoryMap(map);
       })
       .catch(() => {});
-  }, []);
+  }, [shopId]);
 
   const confirmHideProduct = async () => {
     if (!deleteTarget) return;
