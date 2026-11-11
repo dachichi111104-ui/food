@@ -13,12 +13,17 @@ const orderSchema = new mongoose.Schema(
       enum: ["COD", "VNPAY"],
       default: "VNPAY",
     },
+    payment_status: {
+      type: String,
+      enum: ["PENDING", "PAID", "FAILED", "REFUNDED"],
+      default: "PENDING",
+    },
     recipient_name: { type: String, default: "" },
     recipient_phone: { type: String, default: "" },
     shipping_address: { type: String, default: "" },
     status: {
       type: String,
-      enum: ["PENDING_PAYMENT", "PAID", "CANCELLED"],
+      enum: ["PENDING_PAYMENT", "UNPAID_COD", "PAID", "COMPLETED", "CANCELLED"],
       default: "PENDING_PAYMENT",
       required: true,
     },

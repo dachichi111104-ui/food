@@ -45,18 +45,20 @@ const checkout = async (userId, payload = {}) => {
   let createdOrder;
 
   const isCOD = payment_method === "COD";
-  const initialOrderStatus = isCOD ? "PAID" : "PENDING_PAYMENT";
+  const initialOrderStatus = isCOD ? "UNPAID_COD" : "PENDING_PAYMENT";
+  const initialPaymentStatus = "PENDING";
   const initialShopOrderStatus = isCOD ? "CONFIRMED" : "PENDING_PAYMENT";
 
   try {
     await session.withTransaction(async () => {
-      // 1. Tạo Order tổng kèm thông tin voucher
+      // 1. Tạo Order tổng kèm thông tin voucher và trạng thái thanh toán
       const [order] = await Order.create(
         [
           {
             user_id: userId,
             total_amount: finalTotal,
             payment_method,
+            payment_status: initialPaymentStatus,
             recipient_name,
             recipient_phone,
             shipping_address,
@@ -87,6 +89,7 @@ const checkout = async (userId, payload = {}) => {
               subtotal_amount: group.subtotal_amount,
               shipping_fee: group.shipping_fee,
               payment_method,
+              payment_status: initialPaymentStatus,
               recipient_name,
               recipient_phone,
               shipping_address,
@@ -294,7 +297,22 @@ const completeShopOrder = async (userId, shopOrderId) => {
   }
 
   shopOrder.status = "COMPLETED";
+  if (shopOrder.payment_method === "COD") {
+    shopOrder.payment_status = "PAID";
+  }
   await shopOrder.save();
+
+  const remainingUnfinished = await ShopOrder.countDocuments({
+    order_id: shopOrder.order_id,
+    status: { $nin: ["DELIVERED", "COMPLETED", "CANCELLED"] },
+  });
+  if (remainingUnfinished === 0) {
+    await Order.findByIdAndUpdate(shopOrder.order_id, {
+      status: "COMPLETED",
+      payment_status: "PAID",
+    });
+  }
+
   return shopOrder;
 };
 

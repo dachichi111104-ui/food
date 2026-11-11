@@ -53,6 +53,13 @@ const enrichShipments = async (shipments) => {
       ? items.filter((i) => i.shop_order_id.toString() === shopOrder._id.toString())
       : [];
 
+    const paymentMethod = shopOrder?.payment_method || order?.payment_method || "COD";
+    const isPaid = order?.payment_status === "PAID" || (order?.status === "PAID" && paymentMethod === "VNPAY") || s.status === "DELIVERED";
+    const paymentStatus = isPaid ? "PAID" : "PENDING";
+    const amountToCollect = paymentMethod === "COD" && !isPaid
+      ? Math.max(0, (shopOrder.subtotal_amount + shopOrder.shipping_fee - (shopOrder.discount_amount || 0)))
+      : 0;
+
     return {
       shipment_id: s._id,
       status: s.status,
@@ -60,12 +67,16 @@ const enrichShipments = async (shipments) => {
         ? {
             id: shopOrder._id,
             status: shopOrder.status,
+            payment_method: paymentMethod,
+            payment_status: paymentStatus,
+            amount_to_collect: amountToCollect,
             subtotal_amount: shopOrder.subtotal_amount,
             shipping_fee: shopOrder.shipping_fee,
+            discount_amount: shopOrder.discount_amount || 0,
             shop_name: shop ? shop.name : null,
             shop_address: shop ? shop.address : null,
-            recipient_name: user?.name || "Khách hàng",
-            recipient_phone: user?.phone || "Chưa cập nhật SĐT",
+            recipient_name: user?.name || order?.recipient_name || "Khách hàng",
+            recipient_phone: user?.phone || order?.recipient_phone || "Chưa cập nhật SĐT",
             shipping_address: order?.shipping_address || shop?.city || "TP. Hồ Chí Minh",
             items: shopOrderItems,
           }
@@ -118,9 +129,15 @@ const markDelivered = async (shipperId, shipmentId) => {
   shipment.status = "DELIVERED";
   await shipment.save();
 
+  const currentShopOrder = await ShopOrder.findById(shipment.shop_order_id);
+  const updateFields = { status: "COMPLETED" };
+  if (currentShopOrder && currentShopOrder.payment_method === "COD") {
+    updateFields.payment_status = "PAID";
+  }
+
   const shopOrder = await ShopOrder.findOneAndUpdate(
     { _id: shipment.shop_order_id },
-    { status: "COMPLETED" },
+    updateFields,
     { new: true }
   );
 
@@ -131,7 +148,10 @@ const markDelivered = async (shipperId, shipmentId) => {
       status: { $nin: ["DELIVERED", "COMPLETED", "CANCELLED"] },
     });
     if (remainingUnfinished === 0) {
-      await Order.findByIdAndUpdate(shopOrder.order_id, { status: "COMPLETED" });
+      await Order.findByIdAndUpdate(shopOrder.order_id, {
+        status: "COMPLETED",
+        payment_status: "PAID",
+      });
     }
   }
 

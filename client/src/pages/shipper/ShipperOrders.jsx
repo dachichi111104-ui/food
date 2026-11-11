@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { listAvailableShipments, listMyShipments, claimShipment, confirmPickup, markDelivered } from "../../services/shipment.service";
 import DashboardLayout from "../../components/DashboardLayout";
-import { Truck, Package, CheckCircle2, MapPin, Store, Clock, Loader2, Navigation, FileText, Phone } from "lucide-react";
+import { Truck, Package, CheckCircle2, MapPin, Store, Clock, Loader2, Navigation, FileText, Phone, Banknote, CreditCard } from "lucide-react";
 
 const STATUS_CONFIG = {
   UNASSIGNED:        { label: "Chờ nhận",   badge: "badge-warning", Icon: Clock },
@@ -158,6 +158,79 @@ const ShipperOrders = () => {
                     <div style={{ color: "var(--color-ink)", fontSize: 13, display: "flex", alignItems: "flex-start", gap: 5 }}>
                       <MapPin size={13} color="var(--color-gold)" style={{ flexShrink: 0, marginTop: 2 }} />
                       <span><strong>Địa chỉ giao:</strong> {s.shop_order.shipping_address}</span>
+                    </div>
+                  </div>
+
+                  {/* Payment / COD Collection Status Banner for Shipper */}
+                  <div style={{
+                    padding: "12px 14px",
+                    background: s.shop_order.payment_method === "COD"
+                      ? (s.status === "DELIVERED" ? "rgba(34, 197, 94, 0.08)" : "rgba(239, 68, 68, 0.08)")
+                      : "rgba(34, 197, 94, 0.08)",
+                    borderRadius: "var(--radius-sm)",
+                    border: s.shop_order.payment_method === "COD"
+                      ? (s.status === "DELIVERED" ? "1px solid rgba(34, 197, 94, 0.3)" : "1px solid rgba(239, 68, 68, 0.35)")
+                      : "1px solid rgba(34, 197, 94, 0.3)",
+                    marginBottom: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: 10,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{
+                        width: 38, height: 38, borderRadius: "50%",
+                        background: s.shop_order.payment_method === "COD"
+                          ? (s.status === "DELIVERED" ? "rgba(34, 197, 94, 0.15)" : "rgba(239, 68, 68, 0.15)")
+                          : "rgba(34, 197, 94, 0.15)",
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                        color: s.shop_order.payment_method === "COD"
+                          ? (s.status === "DELIVERED" ? "var(--color-success)" : "var(--color-danger)")
+                          : "var(--color-success)",
+                      }}>
+                        {s.shop_order.payment_method === "COD" ? <Banknote size={22} /> : <CreditCard size={22} />}
+                      </div>
+                      <div>
+                        <div style={{
+                          fontWeight: 700,
+                          fontSize: 13.5,
+                          color: s.shop_order.payment_method === "COD"
+                            ? (s.status === "DELIVERED" ? "var(--color-success)" : "var(--color-danger)")
+                            : "var(--color-success)",
+                        }}>
+                          {s.shop_order.payment_method === "COD"
+                            ? (s.status === "DELIVERED"
+                                ? "✓ ĐÃ THU TIỀN COD THÀNH CÔNG"
+                                : "⚠️ CHƯA THANH TOÁN (THU TIỀN MẶT COD)")
+                            : "✓ ĐÃ THANH TOÁN TRỰC TUYẾN (VNPAY)"
+                          }
+                        </div>
+                        <div style={{ fontSize: 12, color: "var(--color-muted)", marginTop: 2 }}>
+                          {s.shop_order.payment_method === "COD"
+                            ? (s.status === "DELIVERED"
+                                ? "Đơn COD đã hoàn tất bàn giao & thu tiền thành công"
+                                : "Tài xế giao hàng tới và thu tiền mặt trực tiếp từ khách")
+                            : "Khách đã thanh toán qua VNPay, Shipper không thu tiền món ăn của khách"
+                          }
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: "right", marginLeft: "auto" }}>
+                      <div style={{ fontSize: 11, color: "var(--color-muted)" }}>
+                        {s.shop_order.payment_method === "COD" ? "Tiền mặt Shipper cần thu:" : "Khách đã trả VNPay:"}
+                      </div>
+                      <div style={{
+                        fontSize: 18,
+                        fontWeight: 800,
+                        color: s.shop_order.payment_method === "COD" ? "var(--color-danger)" : "var(--color-success)",
+                      }}>
+                        {s.shop_order.payment_method === "COD"
+                          ? `${(s.shop_order.amount_to_collect || (s.shop_order.subtotal_amount + s.shop_order.shipping_fee - (s.shop_order.discount_amount || 0))).toLocaleString()}đ`
+                          : "0đ (Đã TT)"
+                        }
+                      </div>
                     </div>
                   </div>
 

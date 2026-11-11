@@ -4,12 +4,19 @@ import { listMyOrders } from "../../services/order.service";
 import { ClipboardList, ChevronRight, Clock, CheckCircle2, XCircle, Package } from "lucide-react";
 
 const STATUS_CONFIG = {
-  PENDING_PAYMENT: { label: "Chờ thanh toán", badge: "badge-warning",  Icon: Clock },
-  PAID:            { label: "Đã thanh toán",  badge: "badge-success",  Icon: CheckCircle2 },
-  CANCELLED:       { label: "Đã hủy",          badge: "badge-danger",   Icon: XCircle },
-  COMPLETED:       { label: "Hoàn tất",         badge: "badge-success",  Icon: CheckCircle2 },
+  PENDING_PAYMENT: { label: "Chờ thanh toán VNPay", badge: "badge-warning", Icon: Clock },
+  UNPAID_COD:      { label: "Chưa thanh toán (COD)", badge: "badge-warning", Icon: Clock },
+  PAID:            { label: "Đã thanh toán",         badge: "badge-success", Icon: CheckCircle2 },
+  CANCELLED:       { label: "Đã hủy",                 badge: "badge-danger",  Icon: XCircle },
+  COMPLETED:       { label: "Hoàn tất",                badge: "badge-success", Icon: CheckCircle2 },
 };
-const getStatusConfig = (status) => STATUS_CONFIG[status] || { label: status, badge: "", Icon: Package };
+
+const getStatusConfig = (order) => {
+  if (order.status === "UNPAID_COD" || (order.payment_method === "COD" && order.status !== "CANCELLED" && order.status !== "COMPLETED")) {
+    return { label: "Chưa thanh toán (COD)", badge: "badge-warning", Icon: Clock };
+  }
+  return STATUS_CONFIG[order.status] || { label: order.status, badge: "", Icon: Package };
+};
 
 const OrderHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -45,7 +52,7 @@ const OrderHistory = () => {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {orders.map((order) => {
-              const { label, badge, Icon } = getStatusConfig(order.status);
+              const { label, badge, Icon } = getStatusConfig(order);
               return (
                 <Link
                   key={order._id}
@@ -63,8 +70,11 @@ const OrderHistory = () => {
                         <Icon size={20} color="var(--color-muted)" />
                       </div>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: 14.5, color: "var(--color-ink)", marginBottom: 3 }}>
-                          Đơn #{order._id.slice(-8).toUpperCase()}
+                        <div style={{ fontWeight: 700, fontSize: 14.5, color: "var(--color-ink)", marginBottom: 3, display: "flex", alignItems: "center", gap: 8 }}>
+                          <span>Đơn #{order._id.slice(-8).toUpperCase()}</span>
+                          <span className={`badge ${order.payment_method === "COD" ? "badge-gold" : "badge-outline"}`} style={{ fontSize: 10, padding: "2px 6px" }}>
+                            {order.payment_method === "COD" ? "COD" : "VNPAY"}
+                          </span>
                         </div>
                         <div style={{ fontSize: 12.5, color: "var(--color-muted)" }}>
                           {new Date(order.createdAt).toLocaleString("vi-VN", {

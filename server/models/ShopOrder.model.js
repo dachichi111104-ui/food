@@ -19,6 +19,11 @@ const shopOrderSchema = new mongoose.Schema(
       enum: ["COD", "VNPAY"],
       default: "VNPAY",
     },
+    payment_status: {
+      type: String,
+      enum: ["PENDING", "PAID", "FAILED", "REFUNDED"],
+      default: "PENDING",
+    },
     recipient_name: { type: String, default: "" },
     recipient_phone: { type: String, default: "" },
     shipping_address: { type: String, default: "" },

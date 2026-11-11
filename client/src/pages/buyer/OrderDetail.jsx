@@ -346,12 +346,27 @@ const OrderDetail = () => {
               <h1 style={{ fontSize: "clamp(18px, 3vw, 22px)", marginBottom: 6 }}>
                 Đơn #{order._id.slice(-8).toUpperCase()}
               </h1>
-              <p className="text-muted" style={{ fontSize: 13 }}>
+              <p className="text-muted" style={{ fontSize: 13, marginBottom: 6 }}>
                 {new Date(order.createdAt).toLocaleString("vi-VN", {
                   day: "2-digit", month: "long", year: "numeric",
                   hour: "2-digit", minute: "2-digit",
                 })}
               </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span className="badge badge-outline" style={{ fontSize: 12 }}>
+                  {order.payment_method === "COD" ? "Thanh toán khi nhận hàng (COD)" : "Ví điện tử VNPAY"}
+                </span>
+                <span className={`badge ${
+                  order.payment_method === "COD"
+                    ? (order.status === "COMPLETED" || order.payment_status === "PAID" ? "badge-success" : "badge-warning")
+                    : (order.status === "PAID" || order.status === "COMPLETED" ? "badge-success" : "badge-warning")
+                }`} style={{ fontSize: 12 }}>
+                  {order.payment_method === "COD"
+                    ? (order.status === "COMPLETED" || order.payment_status === "PAID" ? "✓ Đã thanh toán (Thu COD)" : "⚠️ Chưa thanh toán (Chờ giao thu COD)")
+                    : (order.status === "PAID" || order.status === "COMPLETED" ? "✓ Đã thanh toán VNPAY" : "Chờ thanh toán VNPAY")
+                  }
+                </span>
+              </div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div className="text-price" style={{ fontSize: 24 }}>{order.total_amount.toLocaleString()}đ</div>
