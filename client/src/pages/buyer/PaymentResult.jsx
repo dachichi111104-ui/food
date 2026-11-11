@@ -19,10 +19,17 @@ const PaymentResult = () => {
   const code = searchParams.get("vnp_ResponseCode");
   const isCod = searchParams.get("cod") === "true";
   const orderId = searchParams.get("order_id");
-  const success = isCod || code === "00" || searchParams.get("success") === "true";
+  const statusParam = searchParams.get("status");
+  const isSuccessParam = searchParams.get("success");
+  const queryError = searchParams.get("error");
+  const success =
+    isCod ||
+    code === "00" ||
+    statusParam === "SUCCESS" ||
+    isSuccessParam === "true";
 
   const [retrying, setRetrying] = useState(false);
-  const [retryError, setRetryError] = useState("");
+  const [retryError, setRetryError] = useState(queryError || "");
 
   useEffect(() => {
     // Chỉ tự động điều hướng khi thanh toán thành công

@@ -47,7 +47,30 @@ const handleReturn = async (query) => {
   const txnRef = query.vnp_TxnRef;
   const responseCode = query.vnp_ResponseCode;
 
-  const transaction = await PaymentTransaction.findOne({ gateway_transaction_ref: txnRef });
+  let transaction = await PaymentTransaction.findOne({ gateway_transaction_ref: txnRef });
+  if (!transaction && txnRef) {
+    const orderIdCandidate = txnRef.split("_")[0];
+    if (mongoose.Types.ObjectId.isValid(orderIdCandidate)) {
+      transaction = await PaymentTransaction.findOne({ order_id: orderIdCandidate }).sort({ createdAt: -1 });
+    }
+  }
+
+  if (!transaction && txnRef) {
+    const orderIdCandidate = txnRef.split("_")[0];
+    if (mongoose.Types.ObjectId.isValid(orderIdCandidate)) {
+      const existingOrder = await Order.findById(orderIdCandidate);
+      if (existingOrder) {
+        transaction = await PaymentTransaction.create({
+          order_id: existingOrder._id,
+          method: "VNPAY",
+          amount: existingOrder.total_amount,
+          status: "PENDING",
+          gateway_transaction_ref: txnRef,
+        });
+      }
+    }
+  }
+
   if (!transaction) {
     throw new ApiError(404, "Transaction not found");
   }
@@ -61,6 +84,9 @@ const handleReturn = async (query) => {
   }
 
   const order = await Order.findById(transaction.order_id);
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
 
   if (responseCode === "00") {
     // THÀNH CÔNG
