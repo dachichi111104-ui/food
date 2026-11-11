@@ -4,7 +4,7 @@ const vnpayService = require("./vnpay.service");
 const inventoryService = require("./inventory.service");
 const ApiError = require("../utils/ApiError");
 
-const createPayment = async (userId, orderId, ipAddr) => {
+const createPayment = async (userId, orderId, ipAddr, bankCode) => {
   const order = await Order.findOne({ _id: orderId, user_id: userId });
   if (!order) {
     throw new ApiError(404, "Order not found");
@@ -13,8 +13,8 @@ const createPayment = async (userId, orderId, ipAddr) => {
     throw new ApiError(400, "Order is not pending payment");
   }
 
-  // txnRef phải unique - dùng orderId + timestamp để tránh trùng nếu Buyer bấm thanh toán lại
-  const txnRef = `${order._id}_${Date.now()}`;
+  // txnRef phải unique và thuần ALPHANUMERIC (chỉ a-z, A-Z, 0-9), không dùng dấu gạch dưới '_' theo chuẩn VNPay
+  const txnRef = `${order._id}${Date.now()}`;
 
   await PaymentTransaction.create({
     order_id: order._id,
@@ -29,6 +29,7 @@ const createPayment = async (userId, orderId, ipAddr) => {
     amount: order.total_amount,
     txnRef,
     ipAddr: ipAddr || "127.0.0.1",
+    bankCode,
   });
 
   return { paymentUrl };

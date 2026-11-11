@@ -11,6 +11,7 @@ const buildPaymentUrl = ({
   amount,
   txnRef,
   ipAddr,
+  bankCode,
 }) => {
   const tmnCode = process.env.VNPAY_TMN_CODE || "5ZRFSRU0";
   const secretKey = process.env.VNPAY_HASH_SECRET || "IRYOLRNMCEZMBMEWQENQOIKOQITKQFMN";
@@ -33,6 +34,10 @@ const buildPaymentUrl = ({
     vnp_IpAddr: ipAddr || "127.0.0.1",
     vnp_CreateDate: createDate,
   };
+
+  if (bankCode) {
+    vnp_Params.vnp_BankCode = bankCode;
+  }
 
   // Chuẩn hóa IP localhost
   if (vnp_Params.vnp_IpAddr === "::1") {

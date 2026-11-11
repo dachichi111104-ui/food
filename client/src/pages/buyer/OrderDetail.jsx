@@ -365,53 +365,67 @@ const OrderDetail = () => {
               background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
               border: "1px solid #FCD34D",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
+              flexDirection: "column",
               gap: 14,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    background: "#FDE68A",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Clock size={22} color="#D97706" />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 16, color: "#92400E" }}>
+                    Đơn hàng đang chờ thanh toán qua VNPay
+                  </div>
+                  <div style={{ fontSize: 13, color: "#B45309", marginTop: 2 }}>
+                    Bạn chưa hoàn tất thanh toán. Vui lòng thanh toán để quán ăn bắt đầu chuẩn bị món.
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleRetryPayment}
+                disabled={paying}
+                className="btn btn-primary"
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: "#FDE68A",
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
+                  gap: 8,
+                  fontWeight: 700,
+                  padding: "10px 20px",
+                  fontSize: 14,
                 }}
               >
-                <Clock size={22} color="#D97706" />
-              </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 16, color: "#92400E" }}>
-                  Đơn hàng đang chờ thanh toán qua VNPay
-                </div>
-                <div style={{ fontSize: 13, color: "#B45309", marginTop: 2 }}>
-                  Bạn chưa hoàn tất thanh toán. Vui lòng thanh toán để quán ăn bắt đầu chuẩn bị món.
-                </div>
-              </div>
+                {paying ? <Loader2 size={16} className="spin" /> : <CreditCard size={16} />}
+                {paying ? "Đang kết nối VNPay..." : "Thanh toán lại ngay"}
+              </button>
             </div>
 
-            <button
-              onClick={handleRetryPayment}
-              disabled={paying}
-              className="btn btn-primary"
+            <div
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                fontWeight: 700,
-                padding: "10px 20px",
-                fontSize: 14,
+                padding: "10px 14px",
+                background: "#FEF9C3",
+                borderRadius: "var(--radius-xs)",
+                border: "1px dashed #F59E0B",
+                fontSize: 12.5,
+                color: "#78350F",
+                lineHeight: 1.5,
               }}
             >
-              {paying ? <Loader2 size={16} className="spin" /> : <CreditCard size={16} />}
-              {paying ? "Đang kết nối VNPay..." : "Thanh toán lại ngay"}
-            </button>
+              💡 <strong>Lưu ý test VNPay Sandbox:</strong> Không quét mã QR bằng app ngân hàng thật. Bấm <em>"Thanh toán lại ngay"</em> ➔ Chọn <strong>Thẻ ATM / Tài khoản nội địa &gt; Ngân hàng NCB</strong> ➔ Nhập thẻ: <code>9704198526191432198</code>, Tên: <code>NGUYEN VAN A</code>, Ngày: <code>07/15</code>, OTP: <code>123456</code>.
+            </div>
           </div>
         )}
 

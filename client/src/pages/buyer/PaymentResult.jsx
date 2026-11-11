@@ -106,6 +106,31 @@ const PaymentResult = () => {
             </div>
           )}
 
+          {!success && (
+            <div
+              style={{
+                marginBottom: 20,
+                padding: "12px 14px",
+                background: "#EFF6FF",
+                border: "1px dashed #3B82F6",
+                borderRadius: "var(--radius-sm)",
+                textAlign: "left",
+                fontSize: 12.5,
+                color: "#1E40AF",
+              }}
+            >
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                💡 Hướng dẫn thử nghiệm VNPay Sandbox:
+              </div>
+              <div style={{ lineHeight: 1.5, color: "#1E3A8A" }}>
+                • Không quét mã QR bằng App ngân hàng thật (sẽ bị lỗi tra cứu).<br />
+                • Bấm nút <strong>"Thanh toán lại ngay"</strong> ➔ Chọn tab <strong>Thẻ ATM / Tài khoản nội địa</strong> ➔ Ngân hàng <strong>NCB</strong>.<br />
+                • Số thẻ: <strong>9704198526191432198</strong><br />
+                • Tên chủ thẻ: <strong>NGUYEN VAN A</strong> | Ngày: <strong>07/15</strong> | OTP: <strong>123456</strong>
+              </div>
+            </div>
+          )}
+
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {success ? (
               <>

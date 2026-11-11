@@ -26,7 +26,8 @@ const createPayment = async (req, res, next) => {
     const result = await paymentService.createPayment(
       req.user.id,
       req.body.order_id,
-      ipAddr
+      ipAddr,
+      req.body.bank_code
     );
 
     res.status(200).json(result);

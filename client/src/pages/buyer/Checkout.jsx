@@ -219,26 +219,53 @@ const Checkout = () => {
               <h3 style={{ fontSize: 16, marginBottom: 16 }}>Phương thức thanh toán</h3>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div
-                  onClick={() => setPaymentMethod("VNPAY")}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-                    borderRadius: "var(--radius-sm)",
-                    border: paymentMethod === "VNPAY" ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
-                    background: paymentMethod === "VNPAY" ? "var(--color-primary-pale)" : "var(--color-white)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div style={{
-                    width: 20, height: 20, borderRadius: "50%",
-                    border: paymentMethod === "VNPAY" ? "6px solid var(--color-primary)" : "2px solid var(--color-border)",
-                    background: "#fff",
-                  }} />
-                  <CreditCard size={20} color="#0055A5" />
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14.5 }}>Thanh toán qua Ví / Thẻ VNPay (Sandbox)</div>
-                    <div style={{ fontSize: 12, color: "var(--color-muted)" }}>Hỗ trợ thẻ ATM nội địa, QR Code, Visa/Mastercard</div>
+                <div>
+                  <div
+                    onClick={() => setPaymentMethod("VNPAY")}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
+                      borderRadius: "var(--radius-sm)",
+                      border: paymentMethod === "VNPAY" ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
+                      background: paymentMethod === "VNPAY" ? "var(--color-primary-pale)" : "var(--color-white)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{
+                      width: 20, height: 20, borderRadius: "50%",
+                      border: paymentMethod === "VNPAY" ? "6px solid var(--color-primary)" : "2px solid var(--color-border)",
+                      background: "#fff",
+                    }} />
+                    <CreditCard size={20} color="#0055A5" />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14.5 }}>Thanh toán qua Ví / Thẻ VNPay (Sandbox)</div>
+                      <div style={{ fontSize: 12, color: "var(--color-muted)" }}>Hỗ trợ thẻ ATM nội địa, QR Code, Visa/Mastercard</div>
+                    </div>
                   </div>
+
+                  {paymentMethod === "VNPAY" && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        padding: "12px 14px",
+                        background: "#EFF6FF",
+                        border: "1px dashed #3B82F6",
+                        borderRadius: "var(--radius-sm)",
+                        fontSize: 12.5,
+                        color: "#1E40AF",
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                        <AlertCircle size={15} color="#2563EB" />
+                        Lưu ý thử nghiệm cổng VNPay Sandbox:
+                      </div>
+                      <div style={{ lineHeight: 1.6, color: "#1E3A8A" }}>
+                        • <strong>Không dùng App ngân hàng thật quét mã QR</strong> (sẽ báo lỗi tra cứu do môi trường Sandbox).<br />
+                        • Trên màn hình VNPay, chọn: <strong>Thẻ ATM / Tài khoản nội địa</strong> &gt; chọn ngân hàng <strong>NCB</strong>.<br />
+                        • Số thẻ test: <code style={{ background: "#DBEAFE", padding: "1px 5px", borderRadius: 3, fontWeight: 700 }}>9704198526191432198</code><br />
+                        • Tên chủ thẻ: <code style={{ background: "#DBEAFE", padding: "1px 5px", borderRadius: 3, fontWeight: 700 }}>NGUYEN VAN A</code> | Ngày phát hành: <code style={{ background: "#DBEAFE", padding: "1px 5px", borderRadius: 3, fontWeight: 700 }}>07/15</code> | OTP: <code style={{ background: "#DBEAFE", padding: "1px 5px", borderRadius: 3, fontWeight: 700 }}>123456</code>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div
