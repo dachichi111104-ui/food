@@ -123,8 +123,8 @@ const PaymentResult = () => {
                 💡 Hướng dẫn thử nghiệm VNPay Sandbox:
               </div>
               <div style={{ lineHeight: 1.5, color: "#1E3A8A" }}>
-                • Không quét mã QR bằng App ngân hàng thật (sẽ bị lỗi tra cứu).<br />
-                • Bấm nút <strong>"Thanh toán lại ngay"</strong> ➔ Chọn tab <strong>Thẻ ATM / Tài khoản nội địa</strong> ➔ Ngân hàng <strong>NCB</strong>.<br />
+                • <strong>LƯU Ý:</strong> KHÔNG bấm vào mục đầu tiên <em>"App Ngân hàng và Ví điện tử (VNPAYQR)"</em> (sẽ bị lỗi do Sandbox không hỗ trợ QR).<br />
+                • Bấm nút <strong>"Thanh toán lại ngay"</strong> ➔ Chọn mục <strong>"Thẻ nội địa và tài khoản ngân hàng"</strong> ➔ Click chọn ngân hàng <strong>NCB</strong>.<br />
                 • Số thẻ: <strong>9704198526191432198</strong><br />
                 • Tên chủ thẻ: <strong>NGUYEN VAN A</strong> | Ngày: <strong>07/15</strong> | OTP: <strong>123456</strong>
               </div>

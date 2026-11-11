@@ -4,7 +4,7 @@ const vnpayService = require("./vnpay.service");
 const inventoryService = require("./inventory.service");
 const ApiError = require("../utils/ApiError");
 
-const createPayment = async (userId, orderId, ipAddr, bankCode) => {
+const createPayment = async (userId, orderId, ipAddr) => {
   const order = await Order.findOne({ _id: orderId, user_id: userId });
   if (!order) {
     throw new ApiError(404, "Order not found");
@@ -13,8 +13,8 @@ const createPayment = async (userId, orderId, ipAddr, bankCode) => {
     throw new ApiError(400, "Order is not pending payment");
   }
 
-  // txnRef phải unique và thuần ALPHANUMERIC (chỉ a-z, A-Z, 0-9), không dùng dấu gạch dưới '_' theo chuẩn VNPay
-  const txnRef = `${order._id}${Date.now()}`;
+  // txnRef phải unique - dùng orderId + timestamp để tránh trùng nếu Buyer bấm thanh toán lại
+  const txnRef = `${order._id}_${Date.now()}`;
 
   await PaymentTransaction.create({
     order_id: order._id,
@@ -24,19 +24,11 @@ const createPayment = async (userId, orderId, ipAddr, bankCode) => {
     gateway_transaction_ref: txnRef,
   });
 
-  // Trên Sandbox VNPay, phương thức VNPAYQR không được kích hoạt trên mã Terminal test và sẽ báo lỗi:
-  // "Có lỗi xảy ra trong quá trình xử lý (Mã tra cứu: ...)" nếu người dùng click vào nút VNPAYQR (nút đầu tiên).
-  // Do đó, trên môi trường Sandbox, mặc định chuyển thẳng vào cổng NCB (hoặc bankCode được chọn)
-  // để vào ngay màn hình nhập thẻ test chính thức, tránh gặp lỗi tra cứu VNPAYQR.
-  const isSandbox = (process.env.VNPAY_URL || "").includes("sandbox");
-  const effectiveBankCode = bankCode || (isSandbox ? "NCB" : undefined);
-
   const paymentUrl = vnpayService.buildPaymentUrl({
     orderId: order._id.toString(),
     amount: order.total_amount,
     txnRef,
     ipAddr: ipAddr || "127.0.0.1",
-    bankCode: effectiveBankCode,
   });
 
   return { paymentUrl };

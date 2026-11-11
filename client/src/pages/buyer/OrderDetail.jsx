@@ -441,7 +441,7 @@ const OrderDetail = () => {
                 lineHeight: 1.5,
               }}
             >
-              💡 <strong>Lưu ý test VNPay Sandbox:</strong> Không quét mã QR bằng app ngân hàng thật. Bấm <em>"Thanh toán lại ngay"</em> ➔ Chọn <strong>Thẻ ATM / Tài khoản nội địa &gt; Ngân hàng NCB</strong> ➔ Nhập thẻ: <code>9704198526191432198</code>, Tên: <code>NGUYEN VAN A</code>, Ngày: <code>07/15</code>, OTP: <code>123456</code>.
+              💡 <strong>Lưu ý test VNPay Sandbox:</strong> KHÔNG bấm vào mục <em>"App Ngân hàng và Ví điện tử (VNPAYQR)"</em> ở đầu trang VNPay. Bấm <em>"Thanh toán lại ngay"</em> ➔ Chọn mục <strong>"Thẻ nội địa và tài khoản ngân hàng" &gt; chọn ngân hàng NCB</strong> ➔ Nhập thẻ: <code>9704198526191432198</code>, Tên: <code>NGUYEN VAN A</code>, Ngày: <code>07/15</code>, OTP: <code>123456</code>.
             </div>
           </div>
         )}

@@ -259,8 +259,8 @@ const Checkout = () => {
                         Lưu ý thử nghiệm cổng VNPay Sandbox:
                       </div>
                       <div style={{ lineHeight: 1.6, color: "#1E3A8A" }}>
-                        • <strong>Không dùng App ngân hàng thật quét mã QR</strong> (sẽ báo lỗi tra cứu do môi trường Sandbox).<br />
-                        • Trên màn hình VNPay, chọn: <strong>Thẻ ATM / Tài khoản nội địa</strong> &gt; chọn ngân hàng <strong>NCB</strong>.<br />
+                        • <strong>LƯU Ý:</strong> KHÔNG bấm vào mục đầu tiên <em>"App Ngân hàng và Ví điện tử (VNPAYQR)"</em> (môi trường Sandbox sẽ báo lỗi do không hỗ trợ QR).<br />
+                        • Hãy chọn mục: <strong>"Thẻ nội địa và tài khoản ngân hàng"</strong> ➔ Click chọn ngân hàng <strong>NCB</strong>.<br />
                         • Số thẻ test: <code style={{ background: "#DBEAFE", padding: "1px 5px", borderRadius: 3, fontWeight: 700 }}>9704198526191432198</code><br />
                         • Tên chủ thẻ: <code style={{ background: "#DBEAFE", padding: "1px 5px", borderRadius: 3, fontWeight: 700 }}>NGUYEN VAN A</code> | Ngày phát hành: <code style={{ background: "#DBEAFE", padding: "1px 5px", borderRadius: 3, fontWeight: 700 }}>07/15</code> | OTP: <code style={{ background: "#DBEAFE", padding: "1px 5px", borderRadius: 3, fontWeight: 700 }}>123456</code>
                       </div>
