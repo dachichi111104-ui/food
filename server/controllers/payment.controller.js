@@ -39,8 +39,19 @@ const handleReturn = async (req, res, next) => {
   try {
     const result = await paymentService.handleReturn(req.query);
 
-    const clientUrl =
+    let clientUrl =
       process.env.CLIENT_URL || "http://localhost:5173";
+
+    if (clientUrl.includes("<") || clientUrl.includes(">")) {
+      clientUrl = clientUrl
+        .replace(/<frontend-domain>/gi, "food-lemon-seven")
+        .replace(/<.*?>/g, "food-lemon-seven")
+        .replace(/[<>]/g, "");
+    }
+
+    if (process.env.RENDER && (clientUrl.includes("localhost") || clientUrl.includes("127.0.0.1") || !clientUrl.startsWith("http"))) {
+      clientUrl = "https://food-lemon-seven.vercel.app";
+    }
 
     res.redirect(
       `${clientUrl}/payment-result?status=${result.status}&order_id=${result.order_id}`

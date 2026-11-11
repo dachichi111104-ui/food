@@ -16,7 +16,20 @@ const buildPaymentUrl = ({
   const tmnCode = process.env.VNPAY_TMN_CODE || "5ZRFSRU0";
   const secretKey = process.env.VNPAY_HASH_SECRET || "IRYOLRNMCEZMBMEWQENQOIKOQITKQFMN";
   const vnpUrl = process.env.VNPAY_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-  const returnUrl = process.env.VNPAY_RETURN_URL || "http://localhost:5000/api/payments/vnpay/return";
+  let returnUrl = process.env.VNPAY_RETURN_URL || "http://localhost:5000/api/payments/vnpay/return";
+
+  // Tự động làm sạch returnUrl nếu chứa placeholder dạng <backend-domain> hoặc ký tự nguy hiểm <>
+  if (returnUrl.includes("<") || returnUrl.includes(">")) {
+    returnUrl = returnUrl
+      .replace(/<backend-domain>/gi, "food-f18t")
+      .replace(/<.*?>/g, "food-f18t")
+      .replace(/[<>]/g, "");
+  }
+
+  // Nếu deploy trên Render mà returnUrl vẫn là localhost hoặc chưa đủ chuẩn, tự động gán domain thật của Render
+  if (process.env.RENDER && (returnUrl.includes("localhost") || returnUrl.includes("127.0.0.1") || !returnUrl.startsWith("http"))) {
+    returnUrl = "https://food-f18t.onrender.com/api/payments/vnpay/return";
+  }
 
   const createDate = moment().format("YYYYMMDDHHmmss");
 
