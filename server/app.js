@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
 
 const healthRoute = require("./routes/health.route");
 const authRoute = require("./routes/auth.route");
@@ -40,19 +39,6 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
-
-// Rate limiter for sensitive Auth routes (5 requests per 15 minutes per IP)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
-  message: { message: "Quá nhiều yêu cầu từ IP của bạn, vui lòng thử lại sau 15 phút." },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use("/api/auth/login", authLimiter);
-app.use("/api/auth/register", authLimiter);
-app.use("/api/auth/forgot-password", authLimiter);
 
 // Routes
 app.use("/api/health", healthRoute);
