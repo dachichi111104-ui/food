@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { getOrderDetail, cancelOrder } from "../../services/order.service";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { getOrderDetail, cancelOrder, reorder } from "../../services/order.service";
 import { createPayment } from "../../services/payment.service";
+import { useCart } from "../../context/CartContext";
 import { createReview, createShipperReview, getShipperReview } from "../../services/review.service";
 import { createReport } from "../../services/report.service";
-import { ArrowLeft, Star, CheckCircle2, XCircle, Clock, Truck, Package, AlertCircle, Loader2, AlertTriangle, Upload, Camera, Bike, Store, CreditCard } from "lucide-react";
+import { ArrowLeft, Star, CheckCircle2, XCircle, Clock, Truck, Package, AlertCircle, Loader2, AlertTriangle, Upload, Camera, Bike, Store, CreditCard, RotateCcw } from "lucide-react";
 
 const SHOP_ORDER_STATUS = {
   PENDING_PAYMENT:   { label: "Chờ thanh toán",         step: 0, badge: "badge-warning",  Icon: Clock },
@@ -151,11 +152,14 @@ const ShipperReviewBox = ({ shopOrderId }) => {
 
 const OrderDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { refreshCartCount } = useCart();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [reordering, setReordering] = useState(false);
 
   /* Complaint modal state */
   const [showComplaintModal, setShowComplaintModal] = useState(false);
@@ -187,6 +191,19 @@ const OrderDetail = () => {
     } catch (err) {
       setError(err.response?.data?.message || "Không thể khởi tạo thanh toán VNPay. Vui lòng thử lại!");
       setPaying(false);
+    }
+  };
+
+  const handleReorder = async () => {
+    setReordering(true);
+    setError("");
+    try {
+      await reorder(id);
+      await refreshCartCount();
+      navigate("/cart");
+    } catch (err) {
+      setError(err.response?.data?.message || "Không thể mua lại đơn này. Món ăn có thể đã hết hàng!");
+      setReordering(false);
     }
   };
 
@@ -465,24 +482,36 @@ const OrderDetail = () => {
                   Đã giảm voucher: -{order.discount_amount.toLocaleString()}đ
                 </div>
               )}
-              {order.status !== "CANCELLED" && shopOrders.length > 0 && shopOrders.every((so) => ["PENDING_PAYMENT", "CONFIRMED"].includes(so.status)) && (
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 10, flexWrap: "wrap" }}>
-                  {order.status === "PENDING_PAYMENT" && order.payment_method !== "COD" && (
-                    <button
-                      onClick={handleRetryPayment}
-                      disabled={paying}
-                      className="btn btn-primary btn-sm"
-                      style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }}
-                    >
-                      {paying ? <Loader2 size={14} className="spin" /> : <CreditCard size={14} />}
-                      {paying ? "Đang kết nối..." : "Thanh toán lại"}
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 10, flexWrap: "wrap" }}>
+                <button
+                  onClick={handleReorder}
+                  disabled={reordering}
+                  className="btn btn-outline btn-sm"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }}
+                >
+                  {reordering ? <Loader2 size={14} className="spin" /> : <RotateCcw size={14} />}
+                  {reordering ? "Đang thêm..." : "Mua lại đơn này"}
+                </button>
+
+                {order.status !== "CANCELLED" && shopOrders.length > 0 && shopOrders.every((so) => ["PENDING_PAYMENT", "CONFIRMED"].includes(so.status)) && (
+                  <>
+                    {order.status === "PENDING_PAYMENT" && order.payment_method !== "COD" && (
+                      <button
+                        onClick={handleRetryPayment}
+                        disabled={paying}
+                        className="btn btn-primary btn-sm"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }}
+                      >
+                        {paying ? <Loader2 size={14} className="spin" /> : <CreditCard size={14} />}
+                        {paying ? "Đang kết nối..." : "Thanh toán lại"}
+                      </button>
+                    )}
+                    <button onClick={handleCancel} disabled={actionLoading} className="btn btn-danger btn-sm" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <XCircle size={14} /> {actionLoading ? "Đang hủy..." : "Hủy đơn hàng"}
                     </button>
-                  )}
-                  <button onClick={handleCancel} disabled={actionLoading} className="btn btn-danger btn-sm" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <XCircle size={14} /> {actionLoading ? "Đang hủy..." : "Hủy đơn hàng"}
-                  </button>
-                </div>
-              )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

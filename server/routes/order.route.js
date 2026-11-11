@@ -11,6 +11,7 @@ router.post("/checkout", orderController.checkout);
 router.get("/", orderController.listMyOrders);
 router.get("/:id", orderController.getOrderDetail);
 router.patch("/:id/cancel", orderController.cancelOrder);
+router.post("/:id/reorder", orderController.reorder);
 router.patch("/shop-orders/:shopOrderId/complete", orderController.completeShopOrder);
 
 module.exports = router;

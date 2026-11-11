@@ -24,12 +24,19 @@ const createPayment = async (userId, orderId, ipAddr, bankCode) => {
     gateway_transaction_ref: txnRef,
   });
 
+  // Trên Sandbox VNPay, phương thức VNPAYQR không được kích hoạt trên mã Terminal test và sẽ báo lỗi:
+  // "Có lỗi xảy ra trong quá trình xử lý (Mã tra cứu: ...)" nếu người dùng click vào nút VNPAYQR (nút đầu tiên).
+  // Do đó, trên môi trường Sandbox, mặc định chuyển thẳng vào cổng NCB (hoặc bankCode được chọn)
+  // để vào ngay màn hình nhập thẻ test chính thức, tránh gặp lỗi tra cứu VNPAYQR.
+  const isSandbox = (process.env.VNPAY_URL || "").includes("sandbox");
+  const effectiveBankCode = bankCode || (isSandbox ? "NCB" : undefined);
+
   const paymentUrl = vnpayService.buildPaymentUrl({
     orderId: order._id.toString(),
     amount: order.total_amount,
     txnRef,
     ipAddr: ipAddr || "127.0.0.1",
-    bankCode,
+    bankCode: effectiveBankCode,
   });
 
   return { paymentUrl };

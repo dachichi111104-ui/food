@@ -372,6 +372,55 @@ const cancelExpiredUnpaidOrders = async () => {
   return { cancelledCount };
 };
 
+/**
+ * Mua lại đơn: Lấy danh sách các món từ đơn hàng cũ và thêm vào giỏ hàng của Buyer.
+ */
+const reorder = async (userId, orderId) => {
+  const order = await Order.findOne({ _id: orderId, user_id: userId });
+  if (!order) {
+    throw new ApiError(404, "Không tìm thấy đơn hàng");
+  }
+
+  const shopOrders = await ShopOrder.find({ order_id: order._id });
+  const shopOrderIds = shopOrders.map((so) => so._id);
+
+  const orderItems = await OrderItem.find({ shop_order_id: { $in: shopOrderIds } });
+  if (!orderItems || orderItems.length === 0) {
+    throw new ApiError(400, "Đơn hàng không có món nào để mua lại");
+  }
+
+  let addedCount = 0;
+  let skippedCount = 0;
+
+  for (const item of orderItems) {
+    try {
+      const variant = await ProductVariant.findOne({ _id: item.variant_id, is_active: true });
+      if (!variant) {
+        skippedCount++;
+        continue;
+      }
+      await cartService.addItem(userId, {
+        variant_id: item.variant_id,
+        quantity: item.quantity,
+      });
+      addedCount++;
+    } catch {
+      skippedCount++;
+    }
+  }
+
+  if (addedCount === 0) {
+    throw new ApiError(400, "Các món trong đơn hàng hiện không còn bán hoặc đã hết hàng");
+  }
+
+  return {
+    success: true,
+    message: `Đã thêm ${addedCount} món vào giỏ hàng${skippedCount > 0 ? ` (${skippedCount} món tạm hết)` : ""}.`,
+    addedCount,
+    skippedCount,
+  };
+};
+
 module.exports = {
   checkout,
   getOrderDetail,
@@ -379,5 +428,7 @@ module.exports = {
   cancelOrder,
   completeShopOrder,
   cancelExpiredUnpaidOrders,
+  reorder,
 };
+
 

@@ -45,4 +45,20 @@ const completeShopOrder = async (req, res, next) => {
   }
 };
 
-module.exports = { checkout, listMyOrders, getOrderDetail, cancelOrder, completeShopOrder };
+const reorder = async (req, res, next) => {
+  try {
+    const result = await orderService.reorder(req.user.id, req.params.id);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = {
+  checkout,
+  listMyOrders,
+  getOrderDetail,
+  cancelOrder,
+  completeShopOrder,
+  reorder,
+};
