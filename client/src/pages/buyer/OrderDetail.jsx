@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getOrderDetail, cancelOrder } from "../../services/order.service";
+import { createPayment } from "../../services/payment.service";
 import { createReview, createShipperReview, getShipperReview } from "../../services/review.service";
 import { createReport } from "../../services/report.service";
-import { ArrowLeft, Star, CheckCircle2, XCircle, Clock, Truck, Package, AlertCircle, Loader2, AlertTriangle, Upload, Camera, Bike, Store } from "lucide-react";
+import { ArrowLeft, Star, CheckCircle2, XCircle, Clock, Truck, Package, AlertCircle, Loader2, AlertTriangle, Upload, Camera, Bike, Store, CreditCard } from "lucide-react";
 
 const SHOP_ORDER_STATUS = {
   PENDING_PAYMENT:   { label: "Chờ thanh toán",         step: 0, badge: "badge-warning",  Icon: Clock },
@@ -154,6 +155,7 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [paying, setPaying] = useState(false);
 
   /* Complaint modal state */
   const [showComplaintModal, setShowComplaintModal] = useState(false);
@@ -173,6 +175,20 @@ const OrderDetail = () => {
   };
 
   useEffect(() => { fetchData(); }, [id]);
+
+  const handleRetryPayment = async () => {
+    setPaying(true);
+    setError("");
+    try {
+      const res = await createPayment(id);
+      if (res.paymentUrl) {
+        window.location.href = res.paymentUrl;
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Không thể khởi tạo thanh toán VNPay. Vui lòng thử lại!");
+      setPaying(false);
+    }
+  };
 
   const handleCancel = async () => {
     setActionLoading(true);
@@ -339,6 +355,66 @@ const OrderDetail = () => {
           <ArrowLeft size={15} /> Lịch sử đơn hàng
         </Link>
 
+        {/* Pending Payment Warning & Retry Action */}
+        {order.status === "PENDING_PAYMENT" && order.payment_method !== "COD" && (
+          <div
+            className="card card-body"
+            style={{
+              marginBottom: 20,
+              padding: "16px 20px",
+              background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
+              border: "1px solid #FCD34D",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 14,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
+                  background: "#FDE68A",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Clock size={22} color="#D97706" />
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 16, color: "#92400E" }}>
+                  Đơn hàng đang chờ thanh toán qua VNPay
+                </div>
+                <div style={{ fontSize: 13, color: "#B45309", marginTop: 2 }}>
+                  Bạn chưa hoàn tất thanh toán. Vui lòng thanh toán để quán ăn bắt đầu chuẩn bị món.
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleRetryPayment}
+              disabled={paying}
+              className="btn btn-primary"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                fontWeight: 700,
+                padding: "10px 20px",
+                fontSize: 14,
+              }}
+            >
+              {paying ? <Loader2 size={16} className="spin" /> : <CreditCard size={16} />}
+              {paying ? "Đang kết nối VNPay..." : "Thanh toán lại ngay"}
+            </button>
+          </div>
+        )}
+
         {/* Order header */}
         <div className="card card-body" style={{ marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
@@ -376,9 +452,22 @@ const OrderDetail = () => {
                 </div>
               )}
               {order.status !== "CANCELLED" && shopOrders.length > 0 && shopOrders.every((so) => ["PENDING_PAYMENT", "CONFIRMED"].includes(so.status)) && (
-                <button onClick={handleCancel} disabled={actionLoading} className="btn btn-danger btn-sm" style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
-                  <XCircle size={14} /> {actionLoading ? "Đang hủy..." : "Hủy đơn hàng"}
-                </button>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 10, flexWrap: "wrap" }}>
+                  {order.status === "PENDING_PAYMENT" && order.payment_method !== "COD" && (
+                    <button
+                      onClick={handleRetryPayment}
+                      disabled={paying}
+                      className="btn btn-primary btn-sm"
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }}
+                    >
+                      {paying ? <Loader2 size={14} className="spin" /> : <CreditCard size={14} />}
+                      {paying ? "Đang kết nối..." : "Thanh toán lại"}
+                    </button>
+                  )}
+                  <button onClick={handleCancel} disabled={actionLoading} className="btn btn-danger btn-sm" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <XCircle size={14} /> {actionLoading ? "Đang hủy..." : "Hủy đơn hàng"}
+                  </button>
+                </div>
               )}
             </div>
           </div>

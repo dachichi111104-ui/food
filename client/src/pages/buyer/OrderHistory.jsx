@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { listMyOrders } from "../../services/order.service";
-import { ClipboardList, ChevronRight, Clock, CheckCircle2, XCircle, Package } from "lucide-react";
+import { createPayment } from "../../services/payment.service";
+import { ClipboardList, ChevronRight, Clock, CheckCircle2, XCircle, Package, CreditCard, Loader2 } from "lucide-react";
 
 const STATUS_CONFIG = {
   PENDING_PAYMENT: { label: "Chờ thanh toán VNPay", badge: "badge-warning", Icon: Clock },
@@ -21,10 +22,24 @@ const getStatusConfig = (order) => {
 const OrderHistory = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [payingOrderId, setPayingOrderId] = useState(null);
 
   useEffect(() => {
     listMyOrders().then((data) => setOrders(data.orders)).finally(() => setLoading(false));
   }, []);
+
+  const handleRetryPayment = async (orderId) => {
+    setPayingOrderId(orderId);
+    try {
+      const res = await createPayment(orderId);
+      if (res.paymentUrl) {
+        window.location.href = res.paymentUrl;
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Không thể kết nối đến cổng VNPay. Vui lòng thử lại!");
+      setPayingOrderId(null);
+    }
+  };
 
   if (loading) return (
     <div className="container" style={{ padding: "40px 32px" }}>
@@ -84,7 +99,35 @@ const OrderHistory = () => {
                         </div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                      {order.status === "PENDING_PAYMENT" && order.payment_method !== "COD" && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleRetryPayment(order._id);
+                          }}
+                          disabled={payingOrderId === order._id}
+                          className="btn btn-primary btn-sm"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            fontSize: 12,
+                            padding: "6px 12px",
+                            fontWeight: 700,
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                          }}
+                        >
+                          {payingOrderId === order._id ? (
+                            <Loader2 size={13} className="spin" />
+                          ) : (
+                            <CreditCard size={13} />
+                          )}
+                          {payingOrderId === order._id ? "Đang kết nối..." : "Thanh toán lại"}
+                        </button>
+                      )}
                       <span className={`badge ${badge}`} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <span className="badge-dot" />{label}
                       </span>

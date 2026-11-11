@@ -72,6 +72,7 @@ const handleReturn = async (query) => {
         await transaction.save({ session });
 
         order.status = "PAID";
+        order.payment_status = "PAID";
         await order.save({ session });
 
         const shopOrders = await ShopOrder.find({ order_id: order._id }).session(session);
@@ -85,10 +86,10 @@ const handleReturn = async (query) => {
           await inventoryService.commitStock(item.variant_id, item.quantity, session);
         }
 
-        // ShopOrder chuyển từ PENDING_PAYMENT -> CONFIRMED
+        // ShopOrder chuyển từ PENDING_PAYMENT -> CONFIRMED và payment_status: PAID
         await ShopOrder.updateMany(
           { order_id: order._id },
-          { status: "CONFIRMED" },
+          { status: "CONFIRMED", payment_status: "PAID" },
           { session }
         );
       });
@@ -98,37 +99,12 @@ const handleReturn = async (query) => {
 
     return { status: "SUCCESS", order_id: order._id };
   } else {
-    // THẤT BẠI
-    const session = await mongoose.startSession();
-    try {
-      await session.withTransaction(async () => {
-        transaction.status = "FAILED";
-        transaction.raw_response = query;
-        await transaction.save({ session });
-
-        order.status = "CANCELLED";
-        await order.save({ session });
-
-        const shopOrders = await ShopOrder.find({ order_id: order._id }).session(session);
-        const shopOrderIds = shopOrders.map((so) => so._id);
-        const items = await OrderItem.find({ shop_order_id: { $in: shopOrderIds } }).session(
-          session
-        );
-
-        // Giải phóng reserved_quantity vì thanh toán thất bại
-        for (const item of items) {
-          await inventoryService.releaseStock(item.variant_id, item.quantity, session);
-        }
-
-        await ShopOrder.updateMany(
-          { order_id: order._id },
-          { status: "CANCELLED" },
-          { session }
-        );
-      });
-    } finally {
-      await session.endSession();
-    }
+    // THẤT BẠI HOẶC KHÁCH BẤM HỦY TRÊN CỔNG VNPAY
+    // Ghi nhận transaction này FAILED, NHƯNG giữ order ở PENDING_PAYMENT để Buyer có thể bấm "Thanh toán lại".
+    // Khách có thể chủ động hủy đơn nếu muốn, hoặc hệ thống tự động hủy sau khi hết hạn.
+    transaction.status = "FAILED";
+    transaction.raw_response = query;
+    await transaction.save();
 
     return { status: "FAILED", order_id: order._id };
   }
