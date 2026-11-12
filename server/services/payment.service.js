@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { Order, ShopOrder, OrderItem, PaymentTransaction } = require("../models");
+const { Order, ShopOrder, OrderItem, PaymentTransaction, Shipment } = require("../models");
 const vnpayService = require("./vnpay.service");
 const inventoryService = require("./inventory.service");
 const ApiError = require("../utils/ApiError");
@@ -118,6 +118,22 @@ const handleReturn = async (query) => {
           { status: "CONFIRMED", payment_status: "PAID" },
           { session }
         );
+
+        // Tạo Shipment ngay cho các ShopOrder để Shipper nhìn thấy và nhận đơn giao ngay
+        for (const so of shopOrders) {
+          const existingShipment = await Shipment.findOne({ shop_order_id: so._id }).session(session);
+          if (!existingShipment) {
+            await Shipment.create(
+              [
+                {
+                  shop_order_id: so._id,
+                  status: "UNASSIGNED",
+                },
+              ],
+              { session }
+            );
+          }
+        }
       });
     } finally {
       await session.endSession();

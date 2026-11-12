@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { Order, ShopOrder, OrderItem, Cart, CartItem, Review, User, Voucher, ProductVariant } = require("../models");
+const { Order, ShopOrder, OrderItem, Cart, CartItem, Review, User, Voucher, ProductVariant, Shipment } = require("../models");
 const cartService = require("./cart.service");
 const inventoryService = require("./inventory.service");
 const voucherService = require("./voucher.service");
@@ -109,6 +109,19 @@ const checkout = async (userId, payload = {}) => {
         ],
         { session }
       );
+
+      // Nếu là COD (đã CONFIRMED), tạo ngay Shipment để Shipper nhìn thấy và nhận đơn ngay
+      if (isCOD) {
+        await Shipment.create(
+          [
+            {
+              shop_order_id: shopOrder._id,
+              status: "UNASSIGNED",
+            },
+          ],
+          { session }
+        );
+      }
 
       for (const item of selectedGroup.items) {
         // Reserve tồn kho atomic - throw ApiError(409) nếu không đủ hàng

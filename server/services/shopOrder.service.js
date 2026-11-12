@@ -89,6 +89,16 @@ const confirmOrder = async (userId, shopOrderId) => {
 
   shopOrder.status = "CONFIRMED";
   await shopOrder.save();
+
+  // Tạo Shipment ngay khi Shop xác nhận đơn để Shipper nhìn thấy và nhận đơn ngay
+  const existing = await Shipment.findOne({ shop_order_id: shopOrder._id });
+  if (!existing) {
+    await Shipment.create({
+      shop_order_id: shopOrder._id,
+      status: "UNASSIGNED",
+    });
+  }
+
   return shopOrder;
 };
 
@@ -107,6 +117,16 @@ const startPreparing = async (userId, shopOrderId) => {
 
   shopOrder.status = "PREPARING";
   await shopOrder.save();
+
+  // Đảm bảo Shipment luôn tồn tại để tài xế nhận và di chuyển tới quán
+  const existing = await Shipment.findOne({ shop_order_id: shopOrder._id });
+  if (!existing) {
+    await Shipment.create({
+      shop_order_id: shopOrder._id,
+      status: "UNASSIGNED",
+    });
+  }
+
   return shopOrder;
 };
 
