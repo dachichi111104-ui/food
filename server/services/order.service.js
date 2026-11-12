@@ -14,6 +14,7 @@ const { canTransition } = require("../utils/orderStateMachine");
  */
 const checkout = async (userId, payload = {}) => {
   const {
+    shop_id = null,
     payment_method = "VNPAY",
     recipient_name = "",
     recipient_phone = "",
@@ -21,25 +22,31 @@ const checkout = async (userId, payload = {}) => {
     voucher_code = "",
   } = payload;
 
-  const { shopOrders: groups, order_total } = await cartService.getCartGroupedByShop(userId);
+  const { shopOrders: groups } = await cartService.getCartGroupedByShop(userId, shop_id);
 
   if (!groups || groups.length === 0) {
     throw new ApiError(400, "Giỏ hàng của bạn đang trống.");
   }
 
+  // Luôn đảm bảo 1 ĐƠN HÀNG = 1 QUÁN ĂN (Single-Shop Order)
+  // Nếu giỏ hàng có nhiều quán mà chưa chọn shop_id, mặc định lấy quán đầu tiên
+  const selectedGroup = groups[0];
+  const orderSubtotal = selectedGroup.subtotal_amount;
+  const orderShippingFee = selectedGroup.shipping_fee || 15000;
+  const orderTotalBeforeDiscount = orderSubtotal + orderShippingFee;
+
   // Xử lý áp dụng voucher nếu có
   let voucherData = null;
   let discountAmount = 0;
   if (voucher_code && voucher_code.trim()) {
-    const subtotal = groups.reduce((s, g) => s + g.subtotal_amount, 0);
     voucherData = await voucherService.applyVoucher({
       code: voucher_code.trim(),
-      order_subtotal: subtotal,
+      order_subtotal: orderSubtotal,
     });
     discountAmount = voucherData.discount_amount || 0;
   }
 
-  const finalTotal = Math.max(0, order_total - discountAmount);
+  const finalTotal = Math.max(0, orderTotalBeforeDiscount - discountAmount);
 
   const session = await mongoose.startSession();
   let createdOrder;
@@ -51,11 +58,14 @@ const checkout = async (userId, payload = {}) => {
 
   try {
     await session.withTransaction(async () => {
-      // 1. Tạo Order tổng kèm thông tin voucher và trạng thái thanh toán
+      // 1. Tạo Order gắn liền trực tiếp với đúng Quán ăn (Single-Shop)
       const [order] = await Order.create(
         [
           {
             user_id: userId,
+            shop_id: selectedGroup.shop_id,
+            subtotal_amount: orderSubtotal,
+            shipping_fee: orderShippingFee,
             total_amount: finalTotal,
             payment_method,
             payment_status: initialPaymentStatus,
@@ -79,55 +89,59 @@ const checkout = async (userId, payload = {}) => {
         );
       }
 
-      // 2. Với mỗi shop, tạo ShopOrder + OrderItem + reserve stock từng variant
-      for (const group of groups) {
-        const [shopOrder] = await ShopOrder.create(
+      // 2. Tạo 1 ShopOrder tương ứng cho Quán quản lý và chuẩn bị món
+      const [shopOrder] = await ShopOrder.create(
+        [
+          {
+            order_id: order._id,
+            shop_id: selectedGroup.shop_id,
+            subtotal_amount: orderSubtotal,
+            shipping_fee: orderShippingFee,
+            payment_method,
+            payment_status: initialPaymentStatus,
+            recipient_name,
+            recipient_phone,
+            shipping_address,
+            voucher_id: voucherData?.voucher_id || null,
+            discount_amount: discountAmount,
+            status: initialShopOrderStatus,
+          },
+        ],
+        { session }
+      );
+
+      for (const item of selectedGroup.items) {
+        // Reserve tồn kho atomic - throw ApiError(409) nếu không đủ hàng
+        await inventoryService.reserveStock(item.variant.id, item.quantity, session);
+
+        // Nếu là COD, hàng đã xác nhận xuất kho: commitStock ngay trong transaction
+        if (isCOD) {
+          await inventoryService.commitStock(item.variant.id, item.quantity, session);
+        }
+
+        await OrderItem.create(
           [
             {
-              order_id: order._id,
-              shop_id: group.shop_id,
-              subtotal_amount: group.subtotal_amount,
-              shipping_fee: group.shipping_fee,
-              payment_method,
-              payment_status: initialPaymentStatus,
-              recipient_name,
-              recipient_phone,
-              shipping_address,
-              status: initialShopOrderStatus,
+              shop_order_id: shopOrder._id,
+              variant_id: item.variant.id,
+              product_name_snapshot: item.product.name,
+              variant_name_snapshot: item.variant.name,
+              quantity: item.quantity,
+              price_at_order: item.variant.price,
             },
           ],
           { session }
         );
-
-        for (const item of group.items) {
-          // Reserve tồn kho atomic - throw ApiError(409) nếu không đủ hàng
-          await inventoryService.reserveStock(item.variant.id, item.quantity, session);
-
-          // Nếu là COD, hàng đã xác nhận xuất kho: commitStock ngay trong transaction
-          if (isCOD) {
-            await inventoryService.commitStock(item.variant.id, item.quantity, session);
-          }
-
-          await OrderItem.create(
-            [
-              {
-                shop_order_id: shopOrder._id,
-                variant_id: item.variant.id,
-                product_name_snapshot: item.product.name,
-                variant_name_snapshot: item.variant.name,
-                quantity: item.quantity,
-                price_at_order: item.variant.price,
-              },
-            ],
-            { session }
-          );
-        }
       }
 
-      // 3. Xoá cart sau khi tạo Order thành công
+      // 3. Xoá các món của shop này khỏi Cart sau khi tạo Order thành công
       const cart = await Cart.findOne({ user_id: userId }).session(session);
       if (cart) {
-        await CartItem.deleteMany({ cart_id: cart._id }).session(session);
+        const itemIdsToRemove = selectedGroup.items.map((i) => i.item_id);
+        await CartItem.deleteMany({
+          _id: { $in: itemIdsToRemove },
+          cart_id: cart._id,
+        }).session(session);
       }
 
       createdOrder = order;

@@ -103,11 +103,11 @@ const getCartDetail = async (userId) => {
  * Dùng chung cho cả "preview checkout" (Phase 4) và "checkout thật" (Phase 5).
  * Trả về mảng group, mỗi group tương ứng với 1 ShopOrder sẽ được tạo.
  */
-const getCartGroupedByShop = async (userId) => {
+const getCartGroupedByShop = async (userId, targetShopId = null) => {
   const cartDetail = await getCartDetail(userId);
 
   if (cartDetail.items.length === 0) {
-    throw new ApiError(400, "Cart is empty");
+    throw new ApiError(400, "Giỏ hàng của bạn đang trống.");
   }
 
   // Kiểm tra toàn vẹn dữ liệu: nếu có item nào bị null variant/product/shop
@@ -116,13 +116,23 @@ const getCartGroupedByShop = async (userId) => {
   if (invalidItems.length > 0) {
     throw new ApiError(
       409,
-      "Some items in your cart are no longer available. Please remove them before checkout."
+      "Một số món trong giỏ hàng hiện không còn khả dụng. Vui lòng xóa trước khi đặt hàng."
     );
+  }
+
+  let filteredItems = cartDetail.items;
+  if (targetShopId) {
+    filteredItems = cartDetail.items.filter(
+      (i) => i.shop && i.shop.id.toString() === targetShopId.toString()
+    );
+    if (filteredItems.length === 0) {
+      throw new ApiError(404, "Không tìm thấy món ăn của quán này trong giỏ hàng.");
+    }
   }
 
   const groupsMap = new Map();
 
-  for (const item of cartDetail.items) {
+  for (const item of filteredItems) {
     const shopId = item.shop.id.toString();
     if (!groupsMap.has(shopId)) {
       groupsMap.set(shopId, {
@@ -130,7 +140,7 @@ const getCartGroupedByShop = async (userId) => {
         shop_name: item.shop.name,
         items: [],
         subtotal_amount: 0,
-        shipping_fee: 15000, // phí cố định theo ShopOrder, đúng theo tài liệu
+        shipping_fee: 15000, // phí cố định theo từng quán (1 đơn = 1 quán = 15k)
       });
     }
     const group = groupsMap.get(shopId);

@@ -36,10 +36,10 @@ const removeItem = async (req, res, next) => {
   }
 };
 
-// Preview: xem trước Order sẽ được tách thành các ShopOrder như thế nào
+// Preview: xem trước thông tin đơn hàng theo quán ăn
 const previewCheckout = async (req, res, next) => {
   try {
-    const result = await cartService.getCartGroupedByShop(req.user.id);
+    const result = await cartService.getCartGroupedByShop(req.user.id, req.query.shop_id);
     res.status(200).json(result);
   } catch (err) {
     next(err);

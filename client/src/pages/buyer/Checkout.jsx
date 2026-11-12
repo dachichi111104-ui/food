@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { getCheckoutPreview } from "../../services/cart.service";
 import { checkout } from "../../services/order.service";
 import { createPayment } from "../../services/payment.service";
@@ -14,6 +14,8 @@ import { useCart } from "../../context/CartContext";
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const targetShopId = searchParams.get("shop_id");
   const { refreshCartCount } = useCart();
   const [preview, setPreview] = useState(null);
   const [addresses, setAddresses] = useState([]);
@@ -36,7 +38,7 @@ const Checkout = () => {
     const init = async () => {
       setLoading(true);
       try {
-        const previewData = await getCheckoutPreview();
+        const previewData = await getCheckoutPreview(targetShopId);
         setPreview(previewData);
 
         const addrData = await listAddresses();
@@ -88,8 +90,10 @@ const Checkout = () => {
     setError("");
 
     try {
-      // 1. Tạo order tổng
+      // 1. Tạo đơn hàng thuộc về 1 quán duy nhất
+      const resolvedShopId = targetShopId || preview?.shopOrders?.[0]?.shop_id;
       const orderPayload = {
+        shop_id: resolvedShopId,
         payment_method: paymentMethod,
         recipient_name: selectedAddress?.recipient_name || "",
         recipient_phone: selectedAddress?.recipient_phone || "",

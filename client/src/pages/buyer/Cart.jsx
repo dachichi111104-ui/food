@@ -72,9 +72,22 @@ const Cart = () => {
   };
 
   const toggleSelectItem = (itemId) => {
-    setSelectedItemIds((prev) =>
-      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
-    );
+    const clickedItem = (cart?.items || []).find((i) => i.item_id === itemId);
+    const clickedShopId = clickedItem?.shop?.id || clickedItem?.shop?._id || clickedItem?.shop_id;
+
+    setSelectedItemIds((prev) => {
+      if (prev.includes(itemId)) {
+        return prev.filter((id) => id !== itemId);
+      } else {
+        // Tự động bỏ chọn các món thuộc quán khác để đảm bảo 1 đơn = 1 shop
+        const sameShopPrev = prev.filter((id) => {
+          const item = (cart?.items || []).find((i) => i.item_id === id);
+          const shopId = item?.shop?.id || item?.shop?._id || item?.shop_id;
+          return shopId === clickedShopId;
+        });
+        return [...sameShopPrev, itemId];
+      }
+    });
   };
 
   const toggleSelectShop = (shopItems) => {
@@ -82,9 +95,10 @@ const Cart = () => {
     const allSelected = shopItemIds.every((id) => selectedItemIds.includes(id));
 
     if (allSelected) {
-      setSelectedItemIds((prev) => prev.filter((id) => !shopItemIds.includes(id)));
+      setSelectedItemIds([]);
     } else {
-      setSelectedItemIds((prev) => Array.from(new Set([...prev, ...shopItemIds])));
+      // Chỉ chọn các món của quán này (1 đơn = 1 shop)
+      setSelectedItemIds(shopItemIds);
     }
   };
 
@@ -215,9 +229,20 @@ const Cart = () => {
                       )}
                       <Store size={18} color="var(--color-primary)" />
                       <span style={{ fontWeight: 700, fontSize: 15 }}>{group.shopName}</span>
-                      <span className="text-muted" style={{ fontSize: 12, marginLeft: "auto" }}>
+                      <span className="text-muted" style={{ fontSize: 12, marginLeft: 6 }}>
                         ({group.items.length} món)
                       </span>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/checkout?shop_id=${shopId}`);
+                        }}
+                        style={{ marginLeft: "auto", fontSize: 12, padding: "5px 12px", borderRadius: "var(--radius-sm)" }}
+                      >
+                        Đặt quán này →
+                      </button>
                     </div>
 
                     {/* Shop Items List */}
@@ -333,7 +358,14 @@ const Cart = () => {
               <button
                 className="btn btn-primary btn-block btn-lg"
                 disabled={selectedItems.length === 0}
-                onClick={() => navigate("/checkout")}
+                onClick={() => {
+                  if (selectedItems.length === 0) return;
+                  const selectedShopIds = Array.from(
+                    new Set(selectedItems.map((i) => i.shop?.id || i.shop?._id || i.shop_id).filter(Boolean))
+                  );
+                  const targetShop = selectedShopIds[0];
+                  navigate(targetShop ? `/checkout?shop_id=${targetShop}` : "/checkout");
+                }}
                 style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
               >
                 Tiến hành thanh toán ({selectedItems.length}) <ChevronRight size={17} />

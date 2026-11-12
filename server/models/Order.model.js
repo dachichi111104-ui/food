@@ -7,6 +7,13 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    shop_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shop",
+      default: null,
+    },
+    subtotal_amount: { type: Number, default: 0, min: 0 },
+    shipping_fee: { type: Number, default: 15000, min: 0 },
     total_amount: { type: Number, required: true, min: 0 },
     payment_method: {
       type: String,
