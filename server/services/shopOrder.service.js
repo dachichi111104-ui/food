@@ -208,6 +208,14 @@ const cancelByShop = async (userId, shopOrderId, reason) => {
       shopOrder.status = "CANCELLED";
       shopOrder.cancel_reason = reason;
       await shopOrder.save({ session });
+
+      // Cập nhật trạng thái Shipment tương ứng sang CANCELLED
+      // Giúp gỡ đơn khỏi danh sách chờ nhận của Shipper, đồng thời thông báo cho Shipper đã nhận đơn biết
+      await Shipment.findOneAndUpdate(
+        { shop_order_id: shopOrder._id },
+        { status: "CANCELLED" },
+        { session }
+      );
     });
   } finally {
     await session.endSession();

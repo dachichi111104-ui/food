@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { listAvailableShipments, listMyShipments, claimShipment, confirmPickup, markDelivered } from "../../services/shipment.service";
 import DashboardLayout from "../../components/DashboardLayout";
-import { Truck, Package, CheckCircle2, MapPin, Store, Clock, Loader2, Navigation, FileText, Phone, Banknote, CreditCard } from "lucide-react";
+import { Truck, Package, CheckCircle2, MapPin, Store, Clock, Loader2, Navigation, FileText, Phone, Banknote, CreditCard, XCircle } from "lucide-react";
 
 const STATUS_CONFIG = {
   UNASSIGNED:        { label: "Chờ nhận",   badge: "badge-warning", Icon: Clock },
   ASSIGNED:          { label: "Đã nhận",    badge: "badge-primary", Icon: Package },
   HANDED_TO_SHIPPER: { label: "Đang giao",  badge: "badge-warning", Icon: Truck },
   DELIVERED:         { label: "Đã giao",    badge: "badge-success", Icon: CheckCircle2 },
+  CANCELLED:         { label: "Đã hủy",     badge: "badge-danger",  Icon: XCircle },
 };
 
 const ShipperOrders = () => {
@@ -303,6 +304,22 @@ const ShipperOrders = () => {
                   <span className="badge badge-success" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
                     <CheckCircle2 size={12} /> Hoàn tất giao hàng
                   </span>
+                )}
+                {tab === "mine" && s.status === "CANCELLED" && (
+                  <div style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "6px 12px",
+                    background: "rgba(239, 68, 68, 0.1)",
+                    border: "1px solid rgba(239, 68, 68, 0.25)",
+                    borderRadius: "var(--radius-sm)",
+                    color: "var(--color-danger)",
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                  }}>
+                    <XCircle size={14} /> Quán đã hủy đơn: {s.shop_order?.cancel_reason || "Hết nguyên liệu / Quán bận"} (Bạn không cần tới quán)
+                  </div>
                 )}
               </div>
             </div>
